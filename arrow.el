@@ -54,6 +54,40 @@
 
 ;;; Main functionality
 
+(defun arrow-add ()
+  "Add or update a bookmark at point using a single character."
+  (interactive)
+  (let ((char (read-char "Bookmark key (a-z, 0-9): ")))
+    (unless (or (and (>= char ?a) (<= char ?z))
+                (and (>= char ?0) (<= char ?9)))
+      (user-error "Please use a letter (a-z) or number (0-9)"))
+    (let ((marker (point-marker)))
+      (setf (alist-get char arrow-alist) marker)
+      (arrow--save-to-file) ;; to be implemented
+      (message "Added bookmark '%c' at line %d" char (line-number-at-pos)))))
+
+(defun arrow-delete ()
+  "Delete a specific bookmark by its character key."
+  (interactive)
+  (unless arrow-alist (user-error "No bookmarks to delete"))
+  (let ((char (read-char "Delete bookmark key: ")))
+    (if (alist-get char arrow-alist)
+        (progn
+          (setq arrow-alist (assq-delete-all char arrow-alist))
+          (arrow--save-to-file) ;; to be implemented
+          (message "Deleted bookmark '%c'" char))
+      (message "No bookmark found for '%c'" char))))
+
+(defun arrow-clear-all ()
+  "Clear all file-local bookmarks and remove the storage file."
+  (interactive)
+  (when (y-or-n-p "Clear all bookmarks for this file? ")
+    (setq arrow-alist nil)
+    (let ((file (arrow--storage-file)))
+      (when (and file (file-exists-p file))
+        (delete-file file)))
+    (message "Cleared all bookmarks.")))
+
 
 
 (provide 'arrow)
