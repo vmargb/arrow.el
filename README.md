@@ -1,8 +1,13 @@
 # arrow.el
 
-## What problem this solves
+arrow.el is heavily inspired by the neovim plugin [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim)
 
-arrow.el is heavily inspired by the neovim plugin arrow.nvim. This is a lightweight bookmarking system that keeps navigation marks scoped strictly to individual files. Arrow lets you drop single-character marks (a-z, 0-9) at specific lines using a single keypress, then jump back to them instantly through a transient menu. The bookmarks are isolated per-file and survive across Emacs restarts without requiring any manual save/load actions, making them immediately accessible.
+## What problem this solves
+Every editor should have three layers of bookmarks, global(built-in), project-scoped(harpoon-style), and buffer-scoped -> arrow.el.
+This lets you set marks inside of a buffer and jump to them with a single keypress. Vim/Evil registers and Emacs registers can do this but they are not isolated per buffer. And this gives you more QOL features such as:
+- **File-scoped marks:** Unlike Emacs registers (or vim/evil registers), marks created with arrow.el are isolated to each file.
+- **Quick navigation:** Jump to a mark in one keypress with transient menu showing each mark and its line contents.
+- **Visual selector:** Compact UI which shows each mark in a visual window as well as fringe marks in the buffer.
 
 ---
 
@@ -29,13 +34,14 @@ Or use `use-package`:
 
 | Key Binding | Command | Description |
 |-------------|---------|-------------|
-| `C-c b a` | `local-bm-add` | Create or overwrite a bookmark at point. Prompts for a single character (a-z or 0-9). |
-| `C-c b l` | `local-bm-show` | Display popup of all bookmarks for this file. Press any bookmark key to jump, `q` or `C-g` to cancel. |
-| `C-c b d` | `local-bm-delete` | Remove a specific bookmark by its character key. |
-| `C-c b C` | `local-bm-clear-all` | Delete all bookmarks for the current file and remove its storage file. |
+| `C-c b a` | `arrow-add` | Create or overwrite a bookmark at point. Prompts for a single character (a-z or 0-9). |
+| `C-c b l` | `arrow-show` | Display popup of all bookmarks for this file. Press any bookmark key to jump, `q` or `C-g` to cancel. |
+| `C-c b d` | `arrow-delete` | Remove a specific bookmark by its character key. |
+| `C-c b C` | `arrow-clear-all` | Delete all bookmarks for the current file and remove its storage file. |
 
 ## Todo
 
-- automatic bookmark-naming
+- fringe marker on line
+- automatic mark counter
 - reorder bookmark file
 - Project-scoped transient menu
