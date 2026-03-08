@@ -1,7 +1,7 @@
 ;;; arrow.el --- File-local transient bookmarks -*- lexical-binding: t; -*-
 
 ;; Author: You
-;; Version: 0.1
+;; Version: 0.2
 ;; Package-Requires: ((emacs "27.1"))
 ;; Description: Buffer-local bookmarks with a centered transient hover window.
 
@@ -51,17 +51,39 @@
 
 ;;; Core Functions
 
+(defun arrow--find-free-key ()
+  "Find the next available bookmark key (0-9 then a-z).
+Searches the current buffer's `arrow-alist' for used keys."
+  (let* ((used-keys (mapcar #'car arrow-alist))
+         (priority (append (number-sequence ?0 ?9)
+                           (number-sequence ?a ?z)))
+         (keys priority)
+         found)
+    (while keys
+      (let ((k (pop keys)))
+        (unless (memq k used-keys)
+          (setq found k)
+          (setq keys nil))))
+    (or found
+        (user-error "No free bookmark keys available (0-9, a-z)"))))
+
 (defun arrow-add ()
-  "Add or update a bookmark at point using a single character."
+  "Add or update a bookmark at point using a single character.
+If RET is pressed instead of a key, automatically assign the next
+free key (0-9, then a-z)."
   (interactive)
-  (let ((char (read-char "Bookmark key (a-z, 0-9): ")))
-    (unless (or (and (>= char ?a) (<= char ?z))
-                (and (>= char ?0) (<= char ?9)))
-      (user-error "Please use a letter (a-z) or number (0-9)"))
-    (let ((marker (point-marker)))
-      (setf (alist-get char arrow-alist) marker)
-      (arrow--save-to-file)
-      (message "Added bookmark '%c' at line %d" char (line-number-at-pos)))))
+  (let ((input (read-char "Bookmark key (0-9, a-z, RET for auto): ")))
+    (let ((char
+           (if (= input 13) ;; 13 is RET
+               (arrow--find-free-key)
+             (unless (or (and (>= input ?a) (<= input ?z))
+                         (and (>= input ?0) (<= input ?9)))
+               (user-error "Please use a letter (a-z), number (0-9), or RET"))
+             input)))
+      (let ((marker (point-marker)))
+        (setf (alist-get char arrow-alist) marker)
+        (arrow--save-to-file)
+        (message "Added bookmark '%c' at line %d" char (line-number-at-pos))))))
 
 (defun arrow-delete ()
   "Delete a specific bookmark by its character key."
@@ -190,45 +212,37 @@
       (goto-char jump-marker))))
 
 ;;; Persistence
-
 (defun arrow--save-to-file ()
   "Save markers as positions."
-  (when (and arrow-persist arrow-alist (buffer-file-name))
-    (let* ((file (arrow--storage-file))
-           (data
-            (delq nil
-                  (mapcar
-                   (lambda (x)
-                     (let ((pos (marker-position (cdr x))))
-                       (when pos
-                         (cons (car x) pos))))
-                   arrow-alist))))
-      (if data
-          (with-temp-file file
-            (let ((print-level nil)
-                  (print-length nil))
-              (insert (prin1-to-string data))))
-        (when (file-exists-p file)
-          (delete-file file))))))
+  (when-let* ((file (arrow--storage-file))
+              (data (delq nil
+                          (mapcar (lambda (x)
+                                    (let ((pos (marker-position (cdr x))))
+                                      (when pos
+                                        (cons (car x) pos))))
+                                  arrow-alist))))
+    (with-temp-file file
+      (let ((print-level nil)
+            (print-length nil))
+        (insert (prin1-to-string data))))))
 
 (defun arrow--load-from-file ()
   "Load bookmark positions from storage."
-  (when (and arrow-persist (buffer-file-name))
-    (let ((file (arrow--storage-file))
-          (target-buffer (current-buffer)))
-      (when (and file (file-exists-p file))
-        (with-temp-buffer
-          (insert-file-contents file)
-          (let ((data (read (current-buffer))))
-            (when (listp data)
-              (with-current-buffer target-buffer
-                (setq arrow-alist nil)
-                (dolist (item data)
-                  (when (and (consp item)
-                             (numberp (cdr item)))
-                    (let ((marker (make-marker)))
-                      (set-marker marker (cdr item) target-buffer)
-                      (push (cons (car item) marker) arrow-alist))))))))))))
+  (when-let* ((file (arrow--storage-file))
+              ((file-exists-p file))
+              (target-buffer (current-buffer))
+              (data (with-temp-buffer
+                      (insert-file-contents file)
+                      (read (current-buffer))))
+              ((listp data)))
+    (with-current-buffer target-buffer
+      (setq arrow-alist nil)
+      (dolist (item data)
+        (when (and (consp item)
+                   (numberp (cdr item)))
+          (let ((marker (make-marker)))
+            (set-marker marker (cdr item) target-buffer)
+            (push (cons (car item) marker) arrow-alist)))))))
 
 ;;; Minor Mode
 
