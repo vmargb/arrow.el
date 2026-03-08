@@ -245,7 +245,7 @@
       (progn
         (arrow--load-from-file)
         (add-hook 'after-save-hook #'arrow--save-to-file nil t)
-        (add-hook 'kill-buffer-hook #'--save-to-file nil t))
+        (add-hook 'kill-buffer-hook #'arrow--save-to-file nil t))
     (remove-hook 'after-save-hook #'arrow--save-to-file t)
     (remove-hook 'kill-buffer-hook #'arrow--save-to-file t)))
 
