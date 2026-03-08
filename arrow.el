@@ -1,47 +1,45 @@
-;;; arrow.el --- buffer-local transient bookmarks -*- lexical-binding: t; -*-
+;;; arrow.el --- File-local transient bookmarks -*- lexical-binding: t; -*-
 
-;; author: vmargb
-;; version: 0.1
-;; package-requires: ((emacs "27.1"))
-;; description: buffer-local bookmarks with a transient hover menu.
+;; Author: You
+;; Version: 0.1
+;; Package-Requires: ((emacs "27.1"))
+;; Description: Buffer-local bookmarks with a centered transient hover window.
 
 ;;; Commentary:
-
 ;; An implementation of arrow.nvim in Emacs.  Which is a
 ;; harpoon-like bookmarking system for your buffer (isolated per buffer)
 ;; where each line is a mark to jump or iterate through
 
-;;; code:
+;;; Code:
 
-(defgroup arrow nil ;; customization group
-  "buffer-local bookmarks with transient popups."
+(defgroup arrow nil
+  "File-local bookmarks with transient popups."
   :group 'convenience)
 
 (defcustom arrow-persist t
-  "if non-nil, save bookmarks to a storage file automatically."
+  "If non-nil, save bookmarks to a storage file automatically."
   :type 'boolean
   :group 'arrow)
 
 (defcustom arrow-storage-dir
   (expand-file-name "arrow/" user-emacs-directory)
-  "directory where arrow bookmark files are stored."
+  "Directory where arrow bookmark files are stored."
   :type 'directory
   :group 'arrow)
 
 (defvar-local arrow-alist nil
-  "alist of file-scoped bookmarks. format: ((char . marker) ...)")
+  "Alist of file-scoped bookmarks. Format: ((char . marker) ...)")
 
-;; popup state
+;; Popup state
 (defvar arrow--popup-frame nil)
 (defvar arrow--popup-window nil)
 
 (defface arrow-key-face
-  '((t (:inherit font-lock-keyword-face :weight bold :foreground "#ff6b6b")))
-  "face for highlighting bookmark keys in the popup."
+  '((t (:inherit font-lock-keyword-face :weight bold :foreground "#FF6B6B")))
+  "Face for highlighting bookmark keys in the popup."
   :group 'arrow)
 
-
-;; storage
+;;; Storage helpers
 
 (defun arrow--storage-file ()
   "Return bookmark storage file for current buffer."
@@ -51,8 +49,7 @@
      (concat (md5 (buffer-file-name)) ".bm")
      arrow-storage-dir)))
 
-
-;;; Main functionality
+;;; Core Functions
 
 (defun arrow-add ()
   "Add or update a bookmark at point using a single character."
@@ -63,7 +60,7 @@
       (user-error "Please use a letter (a-z) or number (0-9)"))
     (let ((marker (point-marker)))
       (setf (alist-get char arrow-alist) marker)
-      (arrow--save-to-file) ;; to be implemented
+      (arrow--save-to-file)
       (message "Added bookmark '%c' at line %d" char (line-number-at-pos)))))
 
 (defun arrow-delete ()
@@ -74,7 +71,7 @@
     (if (alist-get char arrow-alist)
         (progn
           (setq arrow-alist (assq-delete-all char arrow-alist))
-          (arrow--save-to-file) ;; to be implemented
+          (arrow--save-to-file)
           (message "Deleted bookmark '%c'" char))
       (message "No bookmark found for '%c'" char))))
 
@@ -88,10 +85,10 @@
         (delete-file file)))
     (message "Cleared all bookmarks.")))
 
-;;; display and jump logic
+;;; Display and Jump Logic
 
 (defun arrow-close-popup ()
-  "close the transient popup window/frame."
+  "Close the transient popup window/frame."
   (when (frame-live-p arrow--popup-frame)
     (delete-frame arrow--popup-frame)
     (setq arrow--popup-frame nil))
@@ -100,7 +97,7 @@
     (setq arrow--popup-window nil)))
 
 (defun arrow--display-child-frame (buf)
-  "display buf in a centered child frame (gui only)."
+  "Display BUF in a centered child frame (GUI only)."
   (let* ((parent (selected-frame))
          (lines (+ 2 (with-current-buffer buf
                        (count-lines (point-min) (point-max)))))
@@ -127,9 +124,9 @@
     (setq arrow--popup-frame frame)))
 
 (defun arrow-show ()
-  "display file bookmarks in a popup and jump via single keypress."
+  "Display file bookmarks in a popup and jump via single keypress."
   (interactive)
-  (unless arrow-alist (user-error "no bookmarks in this file"))
+  (unless arrow-alist (user-error "No bookmarks in this file"))
   (let* ((orig-alist arrow-alist)
          (buf (get-buffer-create " *arrow-popup*"))
          (text-lines '())
@@ -151,7 +148,7 @@
                        (line-end-position))))
                 "<dead marker>")))
         (push
-         (format " [%s] line %-4s %s"
+         (format " [%s] Line %-4s %s"
                  (propertize (char-to-string char)
                              'face 'arrow-key-face)
                  line
@@ -164,7 +161,7 @@
       (setq header-line-format nil)
       (setq cursor-type nil)
       (insert (propertize
-               " bookmarks (press key to jump, q/c-g to quit)\n\n"
+               " Bookmarks (Press key to jump, q/C-g to quit)\n\n"
                'face 'bold))
       (insert (string-join (reverse text-lines) "\n")))
 
@@ -178,54 +175,60 @@
     (redisplay t)
 
     (unwind-protect
-        (let ((key (read-key "bookmark key: ")))
+        (let ((key (read-key "Bookmark key: ")))
           (cond
-           ((or (eq key ?\c-g) (eq key ?q))
-            (message "bookmark jump cancelled."))
+           ((or (eq key ?\C-g) (eq key ?q))
+            (message "Bookmark jump cancelled."))
            ((alist-get key orig-alist)
             (setq jump-marker (alist-get key orig-alist)))
            (t
-            (message "no bookmark for key: %c" key))))
+            (message "No bookmark for key: %c" key))))
       (arrow-close-popup))
 
     (when (and jump-marker (marker-buffer jump-marker))
       (switch-to-buffer (marker-buffer jump-marker))
       (goto-char jump-marker))))
 
-
 ;;; Persistence
 
 (defun arrow--save-to-file ()
   "Save markers as positions."
-  (when-let* ((file (arrow--storage-file))
-              (data (delq nil
-                          (mapcar (lambda (x)
-                                    (let ((pos (marker-position (cdr x))))
-                                      (when pos
-                                        (cons (car x) pos))))
-                                  arrow-alist))))
-    (with-temp-file file
-      (let ((print-level nil)
-            (print-length nil))
-        (insert (prin1-to-string data))))))
+  (when (and arrow-persist arrow-alist (buffer-file-name))
+    (let* ((file (arrow--storage-file))
+           (data
+            (delq nil
+                  (mapcar
+                   (lambda (x)
+                     (let ((pos (marker-position (cdr x))))
+                       (when pos
+                         (cons (car x) pos))))
+                   arrow-alist))))
+      (if data
+          (with-temp-file file
+            (let ((print-level nil)
+                  (print-length nil))
+              (insert (prin1-to-string data))))
+        (when (file-exists-p file)
+          (delete-file file))))))
 
 (defun arrow--load-from-file ()
   "Load bookmark positions from storage."
-  (when-let* ((file (arrow--storage-file))
-              ((file-exists-p file))
-              (target-buffer (current-buffer))
-              (data (with-temp-buffer
-                      (insert-file-contents file)
-                      (read (current-buffer))))
-              ((listp data)))
-    (with-current-buffer target-buffer
-      (setq arrow-alist nil)
-      (dolist (item data)
-        (when (and (consp item)
-                   (numberp (cdr item)))
-          (let ((marker (make-marker)))
-            (set-marker marker (cdr item) target-buffer)
-            (push (cons (car item) marker) arrow-alist)))))))
+  (when (and arrow-persist (buffer-file-name))
+    (let ((file (arrow--storage-file))
+          (target-buffer (current-buffer)))
+      (when (and file (file-exists-p file))
+        (with-temp-buffer
+          (insert-file-contents file)
+          (let ((data (read (current-buffer))))
+            (when (listp data)
+              (with-current-buffer target-buffer
+                (setq arrow-alist nil)
+                (dolist (item data)
+                  (when (and (consp item)
+                             (numberp (cdr item)))
+                    (let ((marker (make-marker)))
+                      (set-marker marker (cdr item) target-buffer)
+                      (push (cons (car item) marker) arrow-alist))))))))))))
 
 ;;; Minor Mode
 
