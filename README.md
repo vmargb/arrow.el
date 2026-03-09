@@ -3,8 +3,8 @@
 arrow.el is heavily inspired by the neovim plugin [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim)
 
 ## What problem this solves
-Every editor should have three layers of bookmarks, global(built-in), project-scoped + buffer-scoped bookmarks -> arrow.el.
-This lets you set marks inside of a buffer and jump to them with a single keypress. Vim/Evil registers and Emacs registers can do this but they are not properly isolated per buffer. And this gives you more QOL features such as visual indicators of bookmarks(using left or right fringe), a useful transient popup menu and file+project isolated bookmarks
+Every editor should have three layers of bookmarks, global(built-in) and project-scoped + buffer-scoped bookmarks -> arrow.el.
+This lets you set marks to a specific line number inside of a buffer and jump to them with a single keypress. Vim/Evil registers and Emacs can do this but they are not properly isolated per buffer or per project. And arrow gives you more QOL features such as visual line indicators(using left or right fringe), as well as a useful floating menu like in arrow.nvim.
 
 ---
 
@@ -26,6 +26,11 @@ Or use `use-package`:
   (define-key arrow-mode-map (kbd "C-c b a") #'arrow-add)
   (define-key arrow-mode-map (kbd "C-c b l") #'arrow-show)
   (define-key arrow-mode-map (kbd "C-c b d") #'arrow-delete))
+  (define-key arrow-mode-map (kbd "C-c b j") #'arrow-jump-buffer))
+  (define-key arrow-mode-map (kbd "C-c p a") #'arrow-project-add)
+  (define-key arrow-mode-map (kbd "C-c p l") #'arrow-project-show)
+  (define-key arrow-mode-map (kbd "C-c p d") #'arrow-project-delete))
+  (define-key arrow-mode-map (kbd "C-c p j") #'arrow-jump-project))
 ```
 
 ### Configuration (defaults)
@@ -49,6 +54,17 @@ Or use `use-package`:
 | `arrow-project-show` | Show project bookmarks |
 | `arrow-project-delete` | Delete bookmark for this project |
 
+
+### Unified workflow (No UI)
+Use these when you've confidently memorized the keybindings.
+
+| Command | Description |
+|-------------|---------|
+| `arrow-jump-buffer` | Instantly jump to buffer line without popup menu. |
+| `arrow-jump-project` | Instantly jump to project file without popup menu. |
+| `arrow-jump` | Unified command for the above two options. |
+
+
 ## Screenshot
 ![bookmark screenshot](screenshots/buffer-bookmarks.png)
 *Example using my init.el: d->dired, o->org, g->general, t->themes, m->magit*
@@ -59,5 +75,5 @@ Or use `use-package`:
 
 ## Todo
 
-- instantly jump to mark without popup (optional)
+- arrow-jump repeat style feature to allow fast cycling without repetition
 - Unified hydra-like menu that shows buffer-local + project bookmarks together

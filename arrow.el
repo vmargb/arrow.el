@@ -109,6 +109,7 @@
       (arrow--save-to-file))))
 
 (defun arrow-promote-bookmark ()
+  "Promote a bookmark in list."
   (interactive)
   (unless arrow-alist (user-error "No bookmarks to promote"))
   (let ((char (read-char "Promote bookmark key: ")))
@@ -117,6 +118,7 @@
       (message "No bookmark found for '%c'" char))))
 
 (defun arrow-add ()
+  "Add a bookmark with keypress."
   (interactive)
   (let* ((input (read-char "Bookmark key (0-9, a-z, RET for auto): "))
          (char (if (= input ?\r)
@@ -132,6 +134,7 @@
     (arrow--refresh-indicators)))
 
 (defun arrow-delete ()
+  "Delete a specific bookmark."
   (interactive)
   (unless arrow-alist (user-error "No bookmarks to delete"))
   (let ((char (read-char "Delete bookmark key: ")))
@@ -144,6 +147,7 @@
       (arrow--refresh-indicators))))
 
 (defun arrow-clear-all ()
+  "Clear all bookmarks fr a buffer."
   (interactive)
   (when (y-or-n-p "Clear all bookmarks for this file? ")
     (setq arrow-alist nil)
@@ -151,6 +155,55 @@
       (when (file-exists-p file) (delete-file file)))
     (message "Cleared all bookmarks.")
     (arrow--clear-indicators)))
+
+(defun arrow-jump-buffer ()
+  "Jump directly to a buffer bookmark."
+  (interactive)
+  (unless arrow-alist
+    (user-error "No buffer bookmarks"))
+  (let* ((char (read-char "Buffer bookmark: "))
+         (entry (assoc char arrow-alist)))
+    (unless entry
+      (user-error "No bookmark '%c'" char))
+    (let ((marker (cdr entry)))
+      (when arrow-auto-promote
+        (arrow--promote char))
+      (unless (marker-buffer marker)
+        (user-error "Bookmark '%c' is dead" char))
+
+      (switch-to-buffer (marker-buffer marker))
+      (goto-char marker))))
+
+
+(defun arrow-jump ()
+  "Unified dispatcher for jumping to line or project buffer."
+  (interactive)
+  (let ((has-buffer arrow-alist)
+        (has-project
+         (ignore-errors
+           (let ((root (arrow-project--root)))
+             (arrow-project--load root)))))
+    (cond
+     ;; both exist
+     ((and has-buffer has-project)
+      (let* ((b-str (propertize "[b]" 'face '(:foreground "DeepSkyBlue" :weight bold)))
+             (p-str (propertize "[p]" 'face '(:foreground "Orange" :weight bold)))
+             (choice (read-char-choice
+                      (format "%suffer or %sroject bookmark: " b-str p-str)
+                      '(?b ?p))))
+        (pcase choice
+          (?b (arrow-jump-buffer))
+          (?p (arrow-project-jump)))))
+
+     ;; only buffer
+     (has-buffer
+      (arrow-jump-buffer))
+
+     ;; only project
+     (has-project
+      (arrow-jump-project))
+     (t
+      (user-error "No bookmarks available")))))
 
 ;;; Display and Jump Logic
 

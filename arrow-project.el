@@ -63,7 +63,30 @@
             (message "Deleted project bookmark '%c'" char))
         (message "No project bookmark found for '%c'" char)))))
 
+
+(defun arrow-jump-project ()
+  "Jump directly to a project bookmark."
+  (interactive)
+  (let* ((root (arrow-project--root))
+         (alist (arrow-project--load root)))
+
+    (unless alist
+      (user-error "No project bookmarks"))
+
+    (let* ((char (read-char "Project bookmark: "))
+           (entry (assoc char alist)))
+      (unless entry
+        (user-error "No project bookmark '%c'" char))
+      (let ((path (cdr entry)))
+        (when arrow-auto-promote
+          (let ((new-alist
+                 (cons entry (assq-delete-all char alist))))
+            (arrow-project--save root new-alist)))
+
+        (find-file (expand-file-name path root))))))
+
 (defun arrow-project-show ()
+  "Show first before jumping."
   (interactive)
   (let* ((root (arrow-project--root))
          (alist (or (arrow-project--load root) nil))
