@@ -38,6 +38,7 @@ Or use `use-package`:
 ```elisp
 (setq arrow-persist t) ;; persists bookmark in memory
 (setq arrow-auto-promote nil) ;; auto rearranges list when key added or used
+(setq arrow-visual-marker t) ;; displays visual marker on line number
 ```
 
 

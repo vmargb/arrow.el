@@ -31,6 +31,11 @@
   :type 'boolean
   :group 'arrow)
 
+(defcustom arrow-visual-marker t
+  "If non-nil, displays fringe marker with the keybinding on the same line."
+  :type 'boolean
+  :group 'arrow)
+
 (defvar-local arrow-alist nil
   "Alist of file-scoped bookmarks.  Format: ((char . marker) ...).")
 
@@ -99,7 +104,8 @@
         (let ((marker (make-marker)))
           (set-marker marker (cdr item) target-buffer)
           (push (cons (car item) marker) arrow-alist))))
-    (arrow--refresh-indicators)))
+    (when arrow-visual-marker
+      (arrow--refresh-indicators))))
 
 (defun arrow--promote (char)
   "Move the bookmark for CHAR to the front of `arrow-alist`."
@@ -131,7 +137,8 @@
     (setf (alist-get char arrow-alist) marker)
     (if arrow-auto-promote (arrow--promote char) (arrow--save-to-file))
     (message "Added bookmark '%c' at line %d" char (line-number-at-pos))
-    (arrow--refresh-indicators)))
+    (when arrow-visual-marker
+      (arrow--refresh-indicators))))
 
 (defun arrow-delete ()
   "Delete a specific bookmark."
@@ -144,7 +151,8 @@
           (arrow--save-to-file)
           (message "Deleted bookmark '%c'" char))
       (message "No bookmark found for '%c'" char)
-      (arrow--refresh-indicators))))
+      (when arrow-visual-marker
+        (arrow--refresh-indicators)))))
 
 (defun arrow-clear-all ()
   "Clear all bookmarks fr a buffer."
@@ -154,7 +162,8 @@
     (when-let ((file (arrow--storage-file)))
       (when (file-exists-p file) (delete-file file)))
     (message "Cleared all bookmarks.")
-    (arrow--clear-indicators)))
+    (when arrow-visual-marker
+      (arrow--clear-indicators))))
 
 (defun arrow-jump-buffer ()
   "Jump directly to a buffer bookmark."
@@ -243,22 +252,22 @@
   (let ((buf (get-buffer-create " *arrow-popup*"))
         (text-lines '())
         (result nil))
-    
+
     (dolist (bm alist)
       (push (funcall format-fn (car bm) (cdr bm)) text-lines))
-    
+
     (with-current-buffer buf
       (erase-buffer)
       (setq mode-line-format nil header-line-format nil cursor-type nil)
       (insert (propertize (format " %s (Press key to jump, q/C-g to quit)\n\n" title) 'face 'bold))
       (insert (string-join (reverse text-lines) "\n")))
-    
+
     (if (display-graphic-p)
         (arrow--display-child-frame buf)
       (setq arrow--popup-window (display-buffer buf '((display-buffer-at-bottom)
                                                       (window-height . fit-window-to-buffer)))))
     (redisplay t)
-    
+
     (unwind-protect
         (let ((key (read-key "Bookmark key: ")))
           (cond
@@ -266,7 +275,7 @@
            ((alist-get key alist) (setq result (assoc key alist)))
            (t (message "No bookmark for key: %c" key))))
       (arrow-close-popup))
-    
+
     result)) ;; return the selection AFTER the popup closes
 
 (defun arrow-show ()
@@ -319,9 +328,10 @@
       (progn
         (arrow--load-from-file)
         ;; ensure margin exists
-        (setq left-margin-width 2)
-        (set-window-buffer nil (current-buffer))
-        (arrow--refresh-indicators)
+        (when arrow-visual-marker
+          (setq left-margin-width 2)
+          (set-window-buffer nil (current-buffer))
+          (arrow--refresh-indicators))
         (add-hook 'after-save-hook #'arrow--save-to-file nil t)
         (add-hook 'kill-buffer-hook #'arrow--save-to-file nil t))
     (remove-hook 'after-save-hook #'arrow--save-to-file t)
