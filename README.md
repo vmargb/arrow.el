@@ -57,7 +57,7 @@ Or use `use-package`:
 
 
 ### Unified workflow (No UI)
-Use these when you've confidently memorized the keybindings.
+Use these when you've confidently memorized your keybindings.
 
 | Command | Description |
 |-------------|---------|

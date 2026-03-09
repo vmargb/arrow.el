@@ -202,7 +202,7 @@
                       '(?b ?p))))
         (pcase choice
           (?b (arrow-jump-buffer))
-          (?p (arrow-project-jump)))))
+          (?p (arrow-jump-project)))))
 
      ;; only buffer
      (has-buffer
