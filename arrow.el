@@ -1,18 +1,18 @@
-;;; arrow.el --- File-local transient bookmarks -*- lexical-binding: t; -*-
+;;; arrow.el --- File-local and Project-local transient bookmarks -*- lexical-binding: t; -*-
 
 ;; Author: vmargb
-;; Version: 0.2.0
+;; Version: 0.3.0
 ;; Package-Requires: ((emacs "28.1"))
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
 ;; License: MIT
 
-;; Description: Buffer-local bookmarks with a centered transient hover window.
+;; Description: Buffer-local and project-local bookmarks with a centered transient hover window.
 
 ;;; Commentary:
-;; An implementation of arrow.nvim in Emacs.  Which is a
-;; harpoon-like bookmarking system for your buffer (isolated per buffer)
-;; where each line is a mark to jump or iterate through
+;; An implementation of arrow.nvim in Emacs.  A harpoon-like bookmarking system using transient menu.
+
+(require 'arrow-core)
 
 ;;; Code:
 
@@ -25,100 +25,70 @@
   :type 'boolean
   :group 'arrow)
 
-(defcustom arrow-auto-promote t
-  "If non-nil, automatically move bookmarks to the top of the list when jumping.
-When nil, the list order remains static unless manually reordered."
+(defcustom arrow-auto-promote nil
+  "If non-nil, automatically move bookmarks to the top of the list when jumping."
   :type 'boolean
-  :group 'arrow)
-
-(defcustom arrow-storage-dir
-  (expand-file-name "arrow/" user-emacs-directory)
-  "Directory where arrow bookmark files are stored."
-  :type 'directory
   :group 'arrow)
 
 (defvar-local arrow-alist nil
   "Alist of file-scoped bookmarks.  Format: ((char . marker) ...).")
 
-;; Popup state
-(defvar arrow--popup-frame nil)
-(defvar arrow--popup-window nil)
 
-(defface arrow-key-face
-  '((t (:inherit font-lock-keyword-face :weight bold :foreground "#FF6B6B")))
-  "Face for highlighting bookmark keys in the popup."
-  :group 'arrow)
+;;; Buffer-local functions
 
-;;; Storage helpers
+(defun arrow--save-to-file ()
+  "Save markers as positions."
+  (when-let* ((file (arrow--storage-file))
+              (data (delq nil
+                          (mapcar (lambda (x)
+                                    (let ((pos (marker-position (cdr x))))
+                                      (when pos (cons (car x) pos))))
+                                  arrow-alist))))
+    (arrow--save-data file data)))
 
-(defun arrow--storage-file ()
-  "Return bookmark storage file for current buffer."
-  (when (buffer-file-name)
-    (make-directory arrow-storage-dir t)
-    (expand-file-name
-     (concat (md5 (buffer-file-name)) ".bm")
-     arrow-storage-dir)))
+(defun arrow--load-from-file ()
+  "Load bookmark positions from storage."
+  (when-let* ((file (arrow--storage-file))
+              (data (arrow--load-data file))
+              ((listp data))
+              (target-buffer (current-buffer)))
+    (setq arrow-alist nil)
+    (dolist (item data)
+      (when (and (consp item) (numberp (cdr item)))
+        (let ((marker (make-marker)))
+          (set-marker marker (cdr item) target-buffer)
+          (push (cons (car item) marker) arrow-alist))))))
 
-;; auto-promote char in storage
 (defun arrow--promote (char)
   "Move the bookmark for CHAR to the front of `arrow-alist`."
-  (let ((entry (assq char arrow-alist)))
+  (let ((entry (assoc char arrow-alist)))
     (when entry
-      ;; Remove entry from current spot, prepend it to the list, and save
       (setq arrow-alist (cons entry (delq entry arrow-alist)))
       (arrow--save-to-file))))
 
-;;; Core Functions
-
 (defun arrow-promote-bookmark ()
-  "Interactively move a specific bookmark to the top of the list."
   (interactive)
   (unless arrow-alist (user-error "No bookmarks to promote"))
   (let ((char (read-char "Promote bookmark key: ")))
-    (if (assq char arrow-alist)
-        (progn
-          (arrow--promote char)
-          (message "Promoted bookmark '%c' to the top." char))
+    (if (assoc char arrow-alist)
+        (progn (arrow--promote char) (message "Promoted bookmark '%c'." char))
       (message "No bookmark found for '%c'" char))))
 
-(defun arrow--find-free-key ()
-  "Find the next available bookmark key (0-9 then a-z).
-Searches the current buffer's `arrow-alist' for used keys."
-  (let* ((used-keys (mapcar #'car arrow-alist))
-         (priority (append (number-sequence ?0 ?9)
-                           (number-sequence ?a ?z)))
-         (keys priority)
-         found)
-    (while keys
-      (let ((k (pop keys)))
-        (unless (memq k used-keys)
-          (setq found k)
-          (setq keys nil))))
-    (or found
-        (user-error "No free bookmark keys available (0-9, a-z)"))))
-
 (defun arrow-add ()
-  "Add or update a bookmark at point using a single character.
-If RET is pressed instead of a key, automatically assign the next
-free key (0-9, then a-z)."
   (interactive)
-  (let ((input (read-char "Bookmark key (0-9, a-z, RET for auto): ")))
-    (let ((char
-           (if (= input ?\r) ;; ?\r for return
-               (arrow--find-free-key)
-             (unless (or (and (>= input ?a) (<= input ?z))
-                         (and (>= input ?0) (<= input ?9)))
-               (user-error "Please use a letter (a-z), number (0-9), or RET"))
-             input)))
-      (let ((marker (point-marker)))
-        (setf (alist-get char arrow-alist) marker)
-        (if arrow-auto-promote
-            (arrow--promote char) ;; promote AND save
-          (arrow--save-to-file)) ;; just save without promoting
-        (message "Added bookmark '%c' at line %d" char (line-number-at-pos))))))
+  (let* ((input (read-char "Bookmark key (0-9, a-z, RET for auto): "))
+         (char (if (= input ?\r)
+                   (arrow--find-free-key-in arrow-alist)
+                 (unless (or (and (>= input ?a) (<= input ?z))
+                             (and (>= input ?0) (<= input ?9)))
+                   (user-error "Please use a letter (a-z), number (0-9), or RET"))
+                 input))
+         (marker (point-marker)))
+    (setf (alist-get char arrow-alist) marker)
+    (if arrow-auto-promote (arrow--promote char) (arrow--save-to-file))
+    (message "Added bookmark '%c' at line %d" char (line-number-at-pos))))
 
 (defun arrow-delete ()
-  "Delete a specific bookmark by its character key."
   (interactive)
   (unless arrow-alist (user-error "No bookmarks to delete"))
   (let ((char (read-char "Delete bookmark key: ")))
@@ -130,13 +100,11 @@ free key (0-9, then a-z)."
       (message "No bookmark found for '%c'" char))))
 
 (defun arrow-clear-all ()
-  "Clear all file-local bookmarks and remove the storage file."
   (interactive)
   (when (y-or-n-p "Clear all bookmarks for this file? ")
     (setq arrow-alist nil)
-    (let ((file (arrow--storage-file)))
-      (when (and file (file-exists-p file))
-        (delete-file file)))
+    (when-let ((file (arrow--storage-file)))
+      (when (file-exists-p file) (delete-file file)))
     (message "Cleared all bookmarks.")))
 
 ;;; Display and Jump Logic
@@ -153,133 +121,90 @@ free key (0-9, then a-z)."
 (defun arrow--display-child-frame (buf)
   "Display BUF in a centered child frame (GUI only)."
   (let* ((parent (selected-frame))
-         (lines (+ 2 (with-current-buffer buf
-                       (count-lines (point-min) (point-max)))))
+         (lines (+ 2 (with-current-buffer buf (count-lines (point-min) (point-max)))))
          (width-chars 75)
-         ;; frame-char-width can be nil in daemon mode or early init
          (char-width (or (frame-char-width parent) 10))
          (char-height (or (frame-char-height parent) 20))
          (px-width (* width-chars char-width))
          (px-height (* lines char-height))
          (left (/ (- (frame-pixel-width parent) px-width) 2))
          (top (/ (- (frame-pixel-height parent) px-height) 2))
-         (frame
-          (make-frame
-           `((parent-frame . ,parent)
-             (minibuffer . nil)
-             (undecorated . t)
-             (internal-border-width . 3)
-             (background-color . ,(face-background 'tooltip nil t))
-             (width . ,width-chars)
-             (height . ,lines)
-             (left . ,left)
-             (top . ,top)
-             (no-accept-focus . t)))))
+         (frame (make-frame
+                 `((parent-frame . ,parent) (minibuffer . nil) (undecorated . t)
+                   (internal-border-width . 3) (background-color . ,(face-background 'tooltip nil t))
+                   (width . ,width-chars) (height . ,lines) (left . ,left) (top . ,top)
+                   (no-accept-focus . t)))))
     (set-window-buffer (frame-root-window frame) buf)
     (set-window-dedicated-p (frame-root-window frame) t)
     (make-frame-visible frame)
     (setq arrow--popup-frame frame)))
 
-(defun arrow-show ()
-  "Display file bookmarks in a popup and jump via single keypress."
-  (interactive)
-  (unless arrow-alist (user-error "No bookmarks in this file"))
-  (let* ((orig-alist arrow-alist)
-         (buf (get-buffer-create " *arrow-popup*"))
-         (text-lines '())
-         jump-marker)
-
-    (dolist (bm orig-alist)
-      (let* ((char (car bm))
-             (marker (cdr bm))
-             (line (if (marker-buffer marker)
-                       (line-number-at-pos marker)
-                     "?"))
-             (preview
-              (if (marker-buffer marker)
-                  (with-current-buffer (marker-buffer marker)
-                    (save-excursion
-                      (goto-char marker)
-                      (buffer-substring
-                       (line-beginning-position)
-                       (line-end-position))))
-                "<dead marker>")))
-        (push
-         (format " [%s] Line %-4s %s"
-                 (propertize (char-to-string char)
-                             'face 'arrow-key-face)
-                 line
-                 (string-trim preview))
-         text-lines)))
-
+(defun arrow--show-popup (title alist format-fn)
+  "Generic transient popup logic. Returns the selected (key . value) or nil."
+  (unless alist (user-error "No bookmarks to display"))
+  (let ((buf (get-buffer-create " *arrow-popup*"))
+        (text-lines '())
+        (result nil))
+    
+    (dolist (bm alist)
+      (push (funcall format-fn (car bm) (cdr bm)) text-lines))
+    
     (with-current-buffer buf
       (erase-buffer)
-      (setq mode-line-format nil)
-      (setq header-line-format nil)
-      (setq cursor-type nil)
-      (insert (propertize
-               " Bookmarks (Press key to jump, q/C-g to quit)\n\n"
-               'face 'bold))
+      (setq mode-line-format nil header-line-format nil cursor-type nil)
+      (insert (propertize (format " %s (Press key to jump, q/C-g to quit)\n\n" title) 'face 'bold))
       (insert (string-join (reverse text-lines) "\n")))
-
+    
     (if (display-graphic-p)
         (arrow--display-child-frame buf)
-      (setq arrow--popup-window
-            (display-buffer
-             buf '((display-buffer-at-bottom)
-                   (window-height . fit-window-to-buffer)))))
-
+      (setq arrow--popup-window (display-buffer buf '((display-buffer-at-bottom)
+                                                      (window-height . fit-window-to-buffer)))))
     (redisplay t)
-
+    
     (unwind-protect
         (let ((key (read-key "Bookmark key: ")))
           (cond
-           ((or (eq key ?\C-g) (eq key ?q))
-            (message "Bookmark jump cancelled."))
-           ((alist-get key orig-alist)
-            (setq jump-marker (alist-get key orig-alist))
-            (when arrow-auto-promote
-              (arrow--promote key))) ; only promote if enabled
-           (t
-            (message "No bookmark for key: %c" key))))
+           ((or (eq key ?\C-g) (eq key ?q)) (message "Cancelled."))
+           ((alist-get key alist) (setq result (assoc key alist)))
+           (t (message "No bookmark for key: %c" key))))
       (arrow-close-popup))
+    
+    result)) ;; return the selection AFTER the popup closes
 
-    (when (and jump-marker (marker-buffer jump-marker))
+(defun arrow-show ()
+  "Display file bookmarks in a popup and jump via single keypress."
+  (interactive)
+  (when-let* ((selection
+               (arrow--show-popup
+                "Bookmarks" arrow-alist
+                (lambda (char marker)
+                  (let* ((line (if (marker-buffer marker)
+                                   (line-number-at-pos marker)
+                                 "?"))
+                         (preview (if (marker-buffer marker)
+                                      (with-current-buffer (marker-buffer marker)
+                                        (save-excursion
+                                          (goto-char marker)
+                                          (buffer-substring
+                                           (line-beginning-position)
+                                           (line-end-position))))
+                                    "<dead marker>")))
+                    (format " [%s] Line %-4s %s"
+                            (propertize (char-to-string char)
+                                        'face 'arrow-key-face)
+                            line
+                            (string-trim preview))))))
+
+              (key (car selection))
+              (jump-marker (cdr selection)))
+
+    ;; Actions run safely outside popup lifecycle
+    (when arrow-auto-promote
+      (arrow--promote key))
+
+    (when (marker-buffer jump-marker)
       (switch-to-buffer (marker-buffer jump-marker))
       (goto-char jump-marker))))
-
-;;; Persistence
-(defun arrow--save-to-file ()
-  "Save markers as positions."
-  (when-let* ((file (arrow--storage-file))
-              (data (delq nil
-                          (mapcar (lambda (x)
-                                    (let ((pos (marker-position (cdr x))))
-                                      (when pos
-                                        (cons (car x) pos))))
-                                  arrow-alist))))
-    (with-temp-file file
-      (let ((print-level nil)
-            (print-length nil))
-        (insert (prin1-to-string data))))))
-
-(defun arrow--load-from-file ()
-  "Load bookmark positions from storage."
-  (when-let* ((file (arrow--storage-file))
-              ((file-exists-p file))
-              (target-buffer (current-buffer))
-              (data (with-temp-buffer
-                      (insert-file-contents file)
-                      (read (current-buffer))))
-              ((listp data)))
-    (with-current-buffer target-buffer
-      (setq arrow-alist nil)
-      (dolist (item data)
-        (when (and (consp item)
-                   (numberp (cdr item)))
-          (let ((marker (make-marker)))
-            (set-marker marker (cdr item) target-buffer)
-            (push (cons (car item) marker) arrow-alist)))))))
 
 ;;; Minor Mode
 
@@ -287,14 +212,13 @@ free key (0-9, then a-z)."
 (define-minor-mode arrow-mode
   "Minor mode for file-local transient bookmarks."
   :lighter " Arrow"
-  :keymap
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-c b a") #'arrow-add)
-    (define-key map (kbd "C-c b l") #'arrow-show)
-    (define-key map (kbd "C-c b d") #'arrow-delete)
-    (define-key map (kbd "C-c b C") #'arrow-clear-all)
-    (define-key map (kbd "C-c b p") #'arrow-promote-bookmark)
-    map)
+  :keymap (let ((map (make-sparse-keymap)))
+            (define-key map (kbd "C-c b a") #'arrow-add)
+            (define-key map (kbd "C-c b l") #'arrow-show)
+            (define-key map (kbd "C-c b d") #'arrow-delete)
+            (define-key map (kbd "C-c b C") #'arrow-clear-all)
+            (define-key map (kbd "C-c b p") #'arrow-promote-bookmark)
+            map)
   (if arrow-mode
       (progn
         (arrow--load-from-file)
@@ -304,13 +228,14 @@ free key (0-9, then a-z)."
     (remove-hook 'kill-buffer-hook #'arrow--save-to-file t)))
 
 (defun arrow--maybe-load ()
-  "Auto-enable arrow-mode when a bookmark file exists."
   (let ((file (arrow--storage-file)))
     (when (and file (file-exists-p file))
-      (unless arrow-mode
-        (arrow-mode 1)))))
+      (unless arrow-mode (arrow-mode 1)))))
 
 (add-hook 'find-file-hook #'arrow--maybe-load)
 
+(require 'arrow-project)
+
 (provide 'arrow)
+
 ;;; arrow.el ends here

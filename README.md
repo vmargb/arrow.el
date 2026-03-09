@@ -34,7 +34,7 @@ Or use `use-package`:
 
 ```elisp
 (setq arrow-persist t) ;; persists bookmark in memory
-(setq arrow-auto-promote t) ;; auto promotes key when added or used
+(setq arrow-auto-promote nil) ;; auto rearranges list when key added or used
 ```
 
 
@@ -51,6 +51,9 @@ Or use `use-package`:
 ## Screenshot
 ![bookmark screenshot](screenshots/buffer-bookmarks.png)
 *Example using my init.el: d->dired, o->org, g->general, t->themes, m->magit*
+
+![project screenshot](screenshots/arrow-project.png)
+*Example using user emacs directory as project*
 
 
 ## Todo
