@@ -3,11 +3,8 @@
 arrow.el is heavily inspired by the neovim plugin [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim)
 
 ## What problem this solves
-Every editor should have three layers of bookmarks, global(built-in), project-scoped(harpoon-style), and buffer-scoped -> arrow.el.
-This lets you set marks inside of a buffer and jump to them with a single keypress. Vim/Evil registers and Emacs registers can do this but they are not isolated per buffer. And this gives you more QOL features such as:
-- **File-scoped marks:** Unlike Emacs registers (or vim/evil registers), marks created with arrow.el are isolated to each file.
-- **Quick navigation:** Jump to a mark in one keypress with transient menu showing each mark and its line contents.
-- **Visual selector:** Compact UI which shows each mark in a visual window as well as fringe marks in the buffer.
+Every editor should have three layers of bookmarks, global(built-in), project-scoped + buffer-scoped bookmarks -> arrow.el.
+This lets you set marks inside of a buffer and jump to them with a single keypress. Vim/Evil registers and Emacs registers can do this but they are not properly isolated per buffer. And this gives you more QOL features such as visual indicators of bookmarks(using left or right fringe), a useful transient popup menu and file+project isolated bookmarks
 
 ---
 
@@ -62,5 +59,5 @@ Or use `use-package`:
 
 ## Todo
 
-- fringe marker on line
-- Project-scoped transient menu
+- instantly jump to mark without popup (optional)
+- Unified hydra-like menu that shows buffer-local + project bookmarks together

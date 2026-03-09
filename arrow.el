@@ -20,6 +20,7 @@
   "File-local bookmarks with transient popups."
   :group 'convenience)
 
+
 (defcustom arrow-persist t
   "If non-nil, save bookmarks to a storage file automatically."
   :type 'boolean
@@ -32,6 +33,46 @@
 
 (defvar-local arrow-alist nil
   "Alist of file-scoped bookmarks.  Format: ((char . marker) ...).")
+
+
+;; Visual overlay
+
+(defface arrow-bookmark-face
+  '((t (:inherit font-lock-keyword-face :weight bold)))
+  "Face used for bookmark indicators."
+  :group 'arrow)
+
+(defvar-local arrow--overlays nil
+  "Overlays used for visual bookmark indicators.")
+
+(defun arrow--place-indicator (char marker)
+  "Place a visual bookmark indicator for CHAR at MARKER."
+  (when (and (marker-buffer marker)
+             (eq (marker-buffer marker) (current-buffer)))
+    (save-excursion
+      (goto-char marker)
+      (let* ((pos (line-beginning-position))
+             (ov (make-overlay pos pos)))
+        (overlay-put ov 'before-string
+                     (propertize
+                      " "
+                      'display
+                      `((margin left-margin)
+                        ,(propertize
+                          (format "%c " char)
+                          'face 'arrow-bookmark-face))))
+        (push ov arrow--overlays)))))
+
+(defun arrow--clear-indicators ()
+  "Remove all bookmark indicators."
+  (mapc #'delete-overlay arrow--overlays)
+  (setq arrow--overlays nil))
+
+(defun arrow--refresh-indicators ()
+  "Recreate bookmark indicators."
+  (arrow--clear-indicators)
+  (dolist (entry arrow-alist)
+    (arrow--place-indicator (car entry) (cdr entry))))
 
 
 ;;; Buffer-local functions
@@ -57,7 +98,8 @@
       (when (and (consp item) (numberp (cdr item)))
         (let ((marker (make-marker)))
           (set-marker marker (cdr item) target-buffer)
-          (push (cons (car item) marker) arrow-alist))))))
+          (push (cons (car item) marker) arrow-alist))))
+    (arrow--refresh-indicators)))
 
 (defun arrow--promote (char)
   "Move the bookmark for CHAR to the front of `arrow-alist`."
@@ -86,7 +128,8 @@
          (marker (point-marker)))
     (setf (alist-get char arrow-alist) marker)
     (if arrow-auto-promote (arrow--promote char) (arrow--save-to-file))
-    (message "Added bookmark '%c' at line %d" char (line-number-at-pos))))
+    (message "Added bookmark '%c' at line %d" char (line-number-at-pos))
+    (arrow--refresh-indicators)))
 
 (defun arrow-delete ()
   (interactive)
@@ -97,7 +140,8 @@
           (setq arrow-alist (assq-delete-all char arrow-alist))
           (arrow--save-to-file)
           (message "Deleted bookmark '%c'" char))
-      (message "No bookmark found for '%c'" char))))
+      (message "No bookmark found for '%c'" char)
+      (arrow--refresh-indicators))))
 
 (defun arrow-clear-all ()
   (interactive)
@@ -105,7 +149,8 @@
     (setq arrow-alist nil)
     (when-let ((file (arrow--storage-file)))
       (when (file-exists-p file) (delete-file file)))
-    (message "Cleared all bookmarks.")))
+    (message "Cleared all bookmarks.")
+    (arrow--clear-indicators)))
 
 ;;; Display and Jump Logic
 
@@ -220,10 +265,15 @@
   (if arrow-mode
       (progn
         (arrow--load-from-file)
+        ;; ensure margin exists
+        (setq left-margin-width 2)
+        (set-window-buffer nil (current-buffer))
+        (arrow--refresh-indicators)
         (add-hook 'after-save-hook #'arrow--save-to-file nil t)
         (add-hook 'kill-buffer-hook #'arrow--save-to-file nil t))
     (remove-hook 'after-save-hook #'arrow--save-to-file t)
-    (remove-hook 'kill-buffer-hook #'arrow--save-to-file t)))
+    (remove-hook 'kill-buffer-hook #'arrow--save-to-file t)
+    (arrow--clear-indicators)))
 
 (defun arrow--maybe-load ()
   "Load storage if it exists, otherwise continue as normal."
