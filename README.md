@@ -18,9 +18,6 @@ Add to your load path and require:
 ```elisp
 (add-to-list 'load-path "/path/to/arrow")
 (require 'arrow)
-
-(add-hook 'prog-mode-hook #'arrow-mode)
-(add-hook 'text-mode-hook #'arrow-mode)
 ```
 
 Or use `use-package`:
@@ -28,6 +25,10 @@ Or use `use-package`:
 ```elisp
 (use-package arrow
   :load-path "/path/to/arrow")
+  :config
+  (define-key arrow-mode-map (kbd "C-c b a") #'arrow-add)
+  (define-key arrow-mode-map (kbd "C-c b l") #'arrow-show)
+  (define-key arrow-mode-map (kbd "C-c b d") #'arrow-delete))
 ```
 
 ### Configuration (defaults)
@@ -40,13 +41,16 @@ Or use `use-package`:
 
 ## Commands
 
-| Key Binding | Command | Description |
-|-------------|---------|-------------|
-| `C-c b a` | `arrow-add` | Create or overwrite a bookmark at point. Prompts for a single character (a-z or 0-9). |
-| `C-c b l` | `arrow-show` | Display popup of all bookmarks for this file. Press any bookmark key to jump, `q` or `C-g` to cancel. |
-| `C-c b d` | `arrow-delete` | Remove a specific bookmark by its character key. |
-| `C-c b C` | `arrow-clear-all` | Delete all bookmarks for the current file and remove its storage file. |
-| `C-c b p` | `arrow-promote-bookmark` | Manually promote a bookmark to the top of the list. |
+| Command | Description |
+|-------------|---------|
+| `arrow-add` | Create or overwrite a bookmark at point. Prompts for a single character (a-z or 0-9). |
+| `arrow-show` | Display popup of all bookmarks for this file. Press any bookmark key to jump, `q` or `C-g` to cancel. |
+| `arrow-delete` | Remove a specific bookmark by its character key. |
+| `arrow-clear-all` | Delete all bookmarks for the current file. |
+| `arrow-promote-bookmark` | Manually promote a bookmark to the top of the list. |
+| `arrow-project-add` | Add file to project bookmarks |
+| `arrow-project-show` | Show project bookmarks |
+| `arrow-project-delete` | Delete bookmark for this project |
 
 ## Screenshot
 ![bookmark screenshot](screenshots/buffer-bookmarks.png)

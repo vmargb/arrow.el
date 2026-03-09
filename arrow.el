@@ -208,17 +208,15 @@
 
 ;;; Minor Mode
 
+(defvar arrow-mode-map
+  (make-sparse-keymap)
+  "Keymap for `arrow-mode'.")
+
 ;;;###autoload
 (define-minor-mode arrow-mode
   "Minor mode for file-local transient bookmarks."
   :lighter " Arrow"
-  :keymap (let ((map (make-sparse-keymap)))
-            (define-key map (kbd "C-c b a") #'arrow-add)
-            (define-key map (kbd "C-c b l") #'arrow-show)
-            (define-key map (kbd "C-c b d") #'arrow-delete)
-            (define-key map (kbd "C-c b C") #'arrow-clear-all)
-            (define-key map (kbd "C-c b p") #'arrow-promote-bookmark)
-            map)
+  :keymap arrow-mode-map
   (if arrow-mode
       (progn
         (arrow--load-from-file)
@@ -228,6 +226,7 @@
     (remove-hook 'kill-buffer-hook #'arrow--save-to-file t)))
 
 (defun arrow--maybe-load ()
+  "Load storage if it exists, otherwise continue as normal."
   (let ((file (arrow--storage-file)))
     (when (and file (file-exists-p file))
       (unless arrow-mode (arrow-mode 1)))))
