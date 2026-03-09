@@ -1,8 +1,12 @@
 ;;; arrow.el --- File-local transient bookmarks -*- lexical-binding: t; -*-
 
-;; Author: You
-;; Version: 0.2
-;; Package-Requires: ((emacs "27.1"))
+;; Author: vmargb
+;; Version: 0.2.0
+;; Package-Requires: ((emacs "28.1"))
+;; URL: https://github.com/vmargb/arrow.el
+;; Keywords: convenience, navigation, bookmarks
+;; License: MIT
+
 ;; Description: Buffer-local bookmarks with a centered transient hover window.
 
 ;;; Commentary:
@@ -21,6 +25,12 @@
   :type 'boolean
   :group 'arrow)
 
+(defcustom arrow-auto-promote t
+  "If non-nil, automatically move bookmarks to the top of the list when jumping.
+When nil, the list order remains static unless manually reordered."
+  :type 'boolean
+  :group 'arrow)
+
 (defcustom arrow-storage-dir
   (expand-file-name "arrow/" user-emacs-directory)
   "Directory where arrow bookmark files are stored."
@@ -28,7 +38,7 @@
   :group 'arrow)
 
 (defvar-local arrow-alist nil
-  "Alist of file-scoped bookmarks. Format: ((char . marker) ...)")
+  "Alist of file-scoped bookmarks.  Format: ((char . marker) ...).")
 
 ;; Popup state
 (defvar arrow--popup-frame nil)
@@ -49,7 +59,27 @@
      (concat (md5 (buffer-file-name)) ".bm")
      arrow-storage-dir)))
 
+;; auto-promote char in storage
+(defun arrow--promote (char)
+  "Move the bookmark for CHAR to the front of `arrow-alist`."
+  (let ((entry (assq char arrow-alist)))
+    (when entry
+      ;; Remove entry from current spot, prepend it to the list, and save
+      (setq arrow-alist (cons entry (delq entry arrow-alist)))
+      (arrow--save-to-file))))
+
 ;;; Core Functions
+
+(defun arrow-promote-bookmark ()
+  "Interactively move a specific bookmark to the top of the list."
+  (interactive)
+  (unless arrow-alist (user-error "No bookmarks to promote"))
+  (let ((char (read-char "Promote bookmark key: ")))
+    (if (assq char arrow-alist)
+        (progn
+          (arrow--promote char)
+          (message "Promoted bookmark '%c' to the top." char))
+      (message "No bookmark found for '%c'" char))))
 
 (defun arrow--find-free-key ()
   "Find the next available bookmark key (0-9 then a-z).
@@ -74,7 +104,7 @@ free key (0-9, then a-z)."
   (interactive)
   (let ((input (read-char "Bookmark key (0-9, a-z, RET for auto): ")))
     (let ((char
-           (if (= input 13) ;; 13 is RET
+           (if (= input ?\r) ;; ?\r for return
                (arrow--find-free-key)
              (unless (or (and (>= input ?a) (<= input ?z))
                          (and (>= input ?0) (<= input ?9)))
@@ -82,7 +112,9 @@ free key (0-9, then a-z)."
              input)))
       (let ((marker (point-marker)))
         (setf (alist-get char arrow-alist) marker)
-        (arrow--save-to-file)
+        (if arrow-auto-promote
+            (arrow--promote char) ;; promote AND save
+          (arrow--save-to-file)) ;; just save without promoting
         (message "Added bookmark '%c' at line %d" char (line-number-at-pos))))))
 
 (defun arrow-delete ()
@@ -124,8 +156,11 @@ free key (0-9, then a-z)."
          (lines (+ 2 (with-current-buffer buf
                        (count-lines (point-min) (point-max)))))
          (width-chars 75)
-         (px-width (* width-chars (frame-char-width parent)))
-         (px-height (* lines (frame-char-height parent)))
+         ;; frame-char-width can be nil in daemon mode or early init
+         (char-width (or (frame-char-width parent) 10))
+         (char-height (or (frame-char-height parent) 20))
+         (px-width (* width-chars char-width))
+         (px-height (* lines char-height))
          (left (/ (- (frame-pixel-width parent) px-width) 2))
          (top (/ (- (frame-pixel-height parent) px-height) 2))
          (frame
@@ -202,7 +237,9 @@ free key (0-9, then a-z)."
            ((or (eq key ?\C-g) (eq key ?q))
             (message "Bookmark jump cancelled."))
            ((alist-get key orig-alist)
-            (setq jump-marker (alist-get key orig-alist)))
+            (setq jump-marker (alist-get key orig-alist))
+            (when arrow-auto-promote
+              (arrow--promote key))) ; only promote if enabled
            (t
             (message "No bookmark for key: %c" key))))
       (arrow-close-popup))
@@ -249,7 +286,6 @@ free key (0-9, then a-z)."
 ;;;###autoload
 (define-minor-mode arrow-mode
   "Minor mode for file-local transient bookmarks."
-  :init-value nil
   :lighter " Arrow"
   :keymap
   (let ((map (make-sparse-keymap)))
@@ -257,6 +293,7 @@ free key (0-9, then a-z)."
     (define-key map (kbd "C-c b l") #'arrow-show)
     (define-key map (kbd "C-c b d") #'arrow-delete)
     (define-key map (kbd "C-c b C") #'arrow-clear-all)
+    (define-key map (kbd "C-c b p") #'arrow-promote-bookmark)
     map)
   (if arrow-mode
       (progn

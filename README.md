@@ -30,6 +30,14 @@ Or use `use-package`:
   :load-path "/path/to/arrow")
 ```
 
+### Configuration (defaults)
+
+```elisp
+(setq arrow-persist t) ;; persists bookmark in memory
+(setq arrow-auto-promote t) ;; auto promotes key when added or used
+```
+
+
 ## Commands
 
 | Key Binding | Command | Description |
@@ -38,10 +46,14 @@ Or use `use-package`:
 | `C-c b l` | `arrow-show` | Display popup of all bookmarks for this file. Press any bookmark key to jump, `q` or `C-g` to cancel. |
 | `C-c b d` | `arrow-delete` | Remove a specific bookmark by its character key. |
 | `C-c b C` | `arrow-clear-all` | Delete all bookmarks for the current file and remove its storage file. |
+| `C-c b p` | `arrow-promote-bookmark` | Manually promote a bookmark to the top of the list. |
+
+## Screenshot
+![bookmark screenshot](screenshots/buffer-bookmarks.png)
+*Example using my init.el: d->dired, o->org, g->general, t->themes, m->magit*
+
 
 ## Todo
 
 - fringe marker on line
-- automatic mark counter
-- reorder bookmark file
 - Project-scoped transient menu
