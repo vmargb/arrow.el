@@ -36,12 +36,24 @@ This provides both harpoon-style quick access to frequently used files and per-b
          ("C-c p j" . arrow-jump-project)))
 ```
 
+### Straight
 ```elisp
 (use-package arrow
   :straight (arrow :type git :host github :repo "vmargb/arrow.el")
   :bind (:map arrow-mode-map
   ;; same keybindings as above
 ```
+
+### Elpaca
+Ensure you have `(elpaca-use-package-mode)`
+
+```elisp
+(use-package arrow
+  :elpaca (arrow :host github :repo "vmargb/arrow.el")
+  :bind (:map arrow-mode-map
+  ;; same keybindings as above
+```
+
 
 ### Configuration (defaults)
 
