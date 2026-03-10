@@ -3,34 +3,44 @@
 arrow.el is heavily inspired by the neovim plugin [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim)
 
 ## What problem this solves
-Every editor should have three layers of bookmarks, global(built-in) and project-scoped + buffer-scoped bookmarks -> arrow.el.
-This lets you set marks to a specific line number inside of a buffer and jump to them with a single keypress. Vim/Evil registers and Emacs can do this but they are not properly isolated per buffer or per project. And arrow gives you more QOL features such as visual line indicators(using left or right fringe), as well as a useful floating menu like in arrow.nvim.
+Editors need three distinct bookmark layers to stay organized and predictable:
+- **Global** (built-in)
+- **Project-isolated** (arrow.el)
+- **Buffer-isolated** (arrow.el)
+
+This provides both harpoon-style quick access to frequently used files and per-buffer marks for specific line numbers. Emacs and Vim/Evil registers *can* approximate this, but they aren’t properly isolated by buffer or project and are vulnerable to clipboard actions (yanks, deletes), which can cause unwanted behavior. arrow.el also adds quality-of-life features such as visual line markers, and at most two keypresses to jump to any bookmark(delegating all search activity to project or consult instead)
 
 ---
 
 ## Installation
 
-Add to your load path and require:
+### `package-vc-install` (Emacs 29+)
 
 ```elisp
-(add-to-list 'load-path "/path/to/arrow")
-(require 'arrow)
+(package-vc-install "https://github.com/vmargb/arrow.el.git")
 ```
 
-Or use `use-package`:
+### Using `use-package` + `:vc` (Emacs 29+)
 
 ```elisp
 (use-package arrow
-  :load-path "/path/to/arrow")
-  :config
-  (define-key arrow-mode-map (kbd "C-c b a") #'arrow-add)
-  (define-key arrow-mode-map (kbd "C-c b l") #'arrow-show)
-  (define-key arrow-mode-map (kbd "C-c b d") #'arrow-delete))
-  (define-key arrow-mode-map (kbd "C-c b j") #'arrow-jump-buffer))
-  (define-key arrow-mode-map (kbd "C-c p a") #'arrow-project-add)
-  (define-key arrow-mode-map (kbd "C-c p l") #'arrow-project-show)
-  (define-key arrow-mode-map (kbd "C-c p d") #'arrow-project-delete))
-  (define-key arrow-mode-map (kbd "C-c p j") #'arrow-jump-project))
+  :vc (:fetcher "github" :repo "vmargb/arrow.el")
+  :bind (:map arrow-mode-map
+         ("C-c b a" . arrow-add)
+         ("C-c b l" . arrow-show)
+         ("C-c b d" . arrow-delete)
+         ("C-c b j" . arrow-jump-buffer)
+         ("C-c p a" . arrow-project-add)
+         ("C-c p l" . arrow-project-show)
+         ("C-c p d" . arrow-project-delete)
+         ("C-c p j" . arrow-jump-project)))
+```
+
+```elisp
+(use-package arrow
+  :straight (arrow :type git :host github :repo "vmargb/arrow.el")
+  :bind (:map arrow-mode-map
+  ;; same keybindings as above
 ```
 
 ### Configuration (defaults)
@@ -46,7 +56,7 @@ Or use `use-package`:
 
 | Command | Description |
 |-------------|---------|
-| `arrow-add` | Create or overwrite a bookmark at point. Prompts for a single character (a-z or 0-9). |
+| `arrow-add` | Create or overwrite a bookmark at point. Prompts for a single character (a-z or 1-9). |
 | `arrow-show` | Display popup of all bookmarks for this file. Press any bookmark key to jump, `q` or `C-g` to cancel. |
 | `arrow-delete` | Remove a specific bookmark by its character key. |
 | `arrow-clear-all` | Delete all bookmarks for the current file. |

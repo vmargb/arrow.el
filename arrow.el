@@ -36,6 +36,13 @@
   :type 'boolean
   :group 'arrow)
 
+(defcustom arrow-visual-marker-position 'left
+  "Position for the fringe marker.  Can be 'left or 'right."
+  :type '(choice
+          (const :tag "Left fringe" left)
+          (const :tag "Right fringe" right))
+  :group 'arrow)
+
 (defvar-local arrow-alist nil
   "Alist of file-scoped bookmarks.  Format: ((char . marker) ...).")
 
@@ -126,12 +133,12 @@
 (defun arrow-add ()
   "Add a bookmark with keypress."
   (interactive)
-  (let* ((input (read-char "Bookmark key (0-9, a-z, RET for auto): "))
+  (let* ((input (read-char "Bookmark key (1-9, a-z, RET for auto): "))
          (char (if (= input ?\r)
                    (arrow--find-free-key-in arrow-alist)
                  (unless (or (and (>= input ?a) (<= input ?z))
                              (and (>= input ?0) (<= input ?9)))
-                   (user-error "Please use a letter (a-z), number (0-9), or RET"))
+                   (user-error "Please use a letter (a-z), number (1-9), or RET"))
                  input))
          (marker (point-marker)))
     (setf (alist-get char arrow-alist) marker)
