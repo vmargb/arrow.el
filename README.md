@@ -24,24 +24,13 @@ This provides both harpoon-style quick access to frequently used files and per-b
 
 ```elisp
 (use-package arrow
-  :vc (:fetcher "github" :repo "vmargb/arrow.el")
-  :bind (:map arrow-mode-map
-         ("C-c b a" . arrow-add)
-         ("C-c b l" . arrow-show)
-         ("C-c b d" . arrow-delete)
-         ("C-c b j" . arrow-jump-buffer)
-         ("C-c p a" . arrow-project-add)
-         ("C-c p l" . arrow-project-show)
-         ("C-c p d" . arrow-project-delete)
-         ("C-c p j" . arrow-jump-project)))
+  :vc (:fetcher "github" :repo "vmargb/arrow.el"))
 ```
 
 ### Straight
 ```elisp
 (use-package arrow
-  :straight (arrow :type git :host github :repo "vmargb/arrow.el")
-  :bind (:map arrow-mode-map
-  ;; same keybindings as above
+  :straight (arrow :type git :host github :repo "vmargb/arrow.el"))
 ```
 
 ### Elpaca
@@ -49,9 +38,7 @@ Ensure you have `(elpaca-use-package-mode)`
 
 ```elisp
 (use-package arrow
-  :elpaca (arrow :host github :repo "vmargb/arrow.el")
-  :bind (:map arrow-mode-map
-  ;; same keybindings as above
+  :elpaca (arrow :host github :repo "vmargb/arrow.el"))
 ```
 
 

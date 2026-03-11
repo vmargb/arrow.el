@@ -336,7 +336,7 @@
         (arrow--load-from-file)
         ;; ensure margin exists
         (when arrow-visual-marker
-          (setq left-margin-width 2)
+          (setq left-margin-width 1)
           (set-window-buffer nil (current-buffer))
           (arrow--refresh-indicators))
         (add-hook 'after-save-hook #'arrow--save-to-file nil t)
