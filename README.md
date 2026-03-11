@@ -80,7 +80,7 @@ Use these when you've confidently memorized your keybindings.
 *Example using my init.el: d->dired, o->org, g->general, t->themes, m->magit*
 
 ![project screenshot](screenshots/arrow-project.png)
-*Example using user emacs directory as project*
+*Example using one of my projects*
 
 
 ## Todo
