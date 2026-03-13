@@ -1,5 +1,9 @@
 ;;; arrow-project.el --- Project-level transient bookmarks -*- lexical-binding: t; -*-
 
+;;; commentary:
+;; Project specific implementation of arrow.nvim in Emacs with identical
+;; functionality to arrow.el
+
 (require 'project)
 (require 'arrow-core)
 

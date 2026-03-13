@@ -8,6 +8,9 @@
 ;;   arrow--show-popup (generic popup)
 ;;   face: arrow-key-face
 
+;;; commentary:
+;; Shared utility functions to handle arrow and arrow-core functionality.
+
 (require 'subr-x)
 
 ;;; Code:

@@ -9,7 +9,7 @@
 
 ;; Description: Buffer-local and project-local bookmarks with a centered transient hover window.
 
-;;; Commentary:
+;;; commentary:
 ;; An implementation of arrow.nvim in Emacs.  A harpoon-like bookmarking system using transient menu.
 
 (require 'arrow-core)
@@ -64,16 +64,21 @@
     (save-excursion
       (goto-char marker)
       (let* ((pos (line-beginning-position))
-             (ov (make-overlay pos pos)))
+             (ov (make-overlay pos pos))
+             ;; which margin to use based on user preference
+             (margin-side (if (eq arrow-visual-marker-position 'right)
+                              'right-margin
+                            'left-margin)))
         (overlay-put ov 'before-string
                      (propertize
                       " "
                       'display
-                      `((margin left-margin)
+                      `((margin ,margin-side)
                         ,(propertize
                           (format "%c " char)
                           'face 'arrow-bookmark-face))))
         (push ov arrow--overlays)))))
+
 
 (defun arrow--clear-indicators ()
   "Remove all bookmark indicators."
@@ -334,15 +339,20 @@
   (if arrow-mode
       (progn
         (arrow--load-from-file)
-        ;; ensure margin exists
         (when arrow-visual-marker
-          (setq left-margin-width 1)
+          (if (eq arrow-visual-marker-position 'right) ;; ensure correct position
+              (setq right-margin-width 1)
+            (setq left-margin-width 1))
           (set-window-buffer nil (current-buffer))
-          (arrow--refresh-indicators))
+          (arrow--refresh-indicators)) ;; show changes
         (add-hook 'after-save-hook #'arrow--save-to-file nil t)
         (add-hook 'kill-buffer-hook #'arrow--save-to-file nil t))
+    ;; remove hooks and reset margins
     (remove-hook 'after-save-hook #'arrow--save-to-file t)
     (remove-hook 'kill-buffer-hook #'arrow--save-to-file t)
+    (setq left-margin-width 0)
+    (setq right-margin-width 0)
+    (set-window-buffer nil (current-buffer))
     (arrow--clear-indicators)))
 
 (defun arrow--maybe-load ()
