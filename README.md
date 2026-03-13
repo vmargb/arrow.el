@@ -2,35 +2,33 @@
 
 arrow.el is heavily inspired by the neovim plugin [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim)
 
-## What problem this solves
-Editors need three distinct bookmark layers to stay organized and predictable:
-- **Global** (built-in)
-- **Project-isolated** (arrow.el)
-- **Buffer-isolated** (arrow.el)
+## About
+Editors need three distinct bookmark layers to stay organized:
+- **Global**
+- **Project**
+- **Buffer**
 
-This provides both harpoon-style quick access to frequently used files and per-buffer marks for specific line numbers. Emacs and Vim/Evil registers *can* approximate this, but they aren’t properly isolated by buffer or project and are vulnerable to clipboard actions (yanks, deletes), which can cause unwanted behavior. arrow.el also adds quality-of-life features such as visual line markers, and at most two keypresses to jump to any bookmark(delegating all search activity to project or consult instead)
+This provides both per-project bookmarks to frequently used files and per-buffer bookmarks to specific line numbers. Emacs and Vim/Evil registers *can* do this, but they aren’t properly isolated by buffer or project and Evil is vulnerable to clipboard actions (yanks, deletes), which can cause unwanted behaviour. arrow.el also adds QOL features such as visual fringe markers, a floating hover menu, and at most two keybinds to jump to any bookmark(delegating all search activity to project instead)
 
 ---
 
 ## Installation
 
-### `package-vc-install` (Emacs 29+)
-
-```elisp
-(package-vc-install "https://github.com/vmargb/arrow.el.git")
-```
-
-### Using `use-package` + `:vc` (Emacs 29+)
+### Using `use-package` + `package-vc-install` (Emacs 29+)
 
 ```elisp
 (use-package arrow
-  :vc (:fetcher "github" :repo "vmargb/arrow.el"))
+  :vc (:fetcher "github" :repo "vmargb/arrow.el")
+  :config
+  (arrow-mode 1))
 ```
 
 ### Straight
 ```elisp
 (use-package arrow
-  :straight (arrow :type git :host github :repo "vmargb/arrow.el"))
+  :straight (arrow :type git :host github :repo "vmargb/arrow.el")
+  :config
+  (arrow-mode 1))
 ```
 
 ### Elpaca
@@ -38,18 +36,32 @@ Ensure you have `(elpaca-use-package-mode)`
 
 ```elisp
 (use-package arrow
-  :elpaca (arrow :host github :repo "vmargb/arrow.el"))
+  :elpaca (arrow :host github :repo "vmargb/arrow.el")
+  :config
+  (arrow-mode 1))
 ```
 
 
 ### Configuration (defaults)
 
 ```elisp
-(setq arrow-persist t) ;; persists bookmark in memory
+(setq arrow-persist t) ;; persists bookmark on disk
 (setq arrow-auto-promote nil) ;; auto rearranges list when key added or used
 (setq arrow-visual-marker t) ;; displays visual marker on line number
+(setq arrow-visual-marker-position 'left) ;; marker position(left or right)
 ```
 
+#### Example keybinds
+```elisp
+(define-key arrow-mode-map (kbd "C-c b a") #'arrow-add)
+(define-key arrow-mode-map (kbd "C-c b l") #'arrow-show)
+(define-key arrow-mode-map (kbd "C-c b d") #'arrow-delete)
+(define-key arrow-mode-map (kbd "C-c b j") #'arrow-jump-buffer)
+(define-key arrow-mode-map (kbd "C-c p a") #'arrow-project-add)
+(define-key arrow-mode-map (kbd "C-c p l") #'arrow-project-show)
+(define-key arrow-mode-map (kbd "C-c p d") #'arrow-project-delete)
+(define-key arrow-mode-map (kbd "C-c p j") #'arrow-jump-project)
+```
 
 ## Commands
 
@@ -66,7 +78,7 @@ Ensure you have `(elpaca-use-package-mode)`
 
 
 ### Unified workflow (No UI)
-Use these when you've confidently memorized your keybindings.
+Use these when you've confidently memorized your marks.
 
 | Command | Description |
 |-------------|---------|
