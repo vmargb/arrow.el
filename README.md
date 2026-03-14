@@ -97,10 +97,10 @@ Use these when you've confidently memorized your marks.
 
 ## Screenshot
 ![bookmark screenshot](screenshots/buffer-bookmarks.png)
-*Example using my init.el: d->dired, o->org, g->general, t->themes, m->magit*
+*Example using my init.el: d->dired, o->org, l->langs, t->themes, m->magit*
 
 ![project screenshot](screenshots/arrow-project.png)
-*Example using one of my projects*
+*Example using user emacs directory*
 
 
 ## Todo
