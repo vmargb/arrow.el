@@ -89,26 +89,39 @@
 
         (find-file (expand-file-name path root))))))
 
+
 (defun arrow-project-show ()
-  "Show first before jumping."
+  "Show project bookmarks.  Support splits: C-key (horizontal), M-key (vertical)."
   (interactive)
   (let* ((root (arrow-project--root))
          (alist (or (arrow-project--load root) nil))
          (proj-name (file-name-nondirectory (directory-file-name root))))
-    (when-let* ((selection
-                 (arrow--show-popup
-                  (format "Project Files (%s)" proj-name)
-                  alist
-                  (lambda (char path)
-                    (format " [%s] %s"
-                            (propertize (char-to-string char) 'face 'arrow-key-face)
-                            path)))))
-      (let ((key (car selection))
-            (path (cdr selection)))
+    (when-let* ((result (arrow--show-popup
+                         (format "Project (%s)" proj-name)
+                         alist
+                         (lambda (char path)
+                           (format " [%s] %s"
+                                   (propertize (char-to-string char) 'face 'arrow-key-face)
+                                   path)))))
+      (let* ((selection (car result))
+             (mods (cdr result))
+             (key (car selection))
+             (path (cdr selection))
+             (full-path (expand-file-name path root)))
+
         (when arrow-auto-promote
           (let ((new-alist (cons (assoc key alist) (assq-delete-all key alist))))
             (arrow-project--save root new-alist)))
-        (find-file (expand-file-name path root))))))
+
+        (cond
+         ((memq 'control mods) ; horizontal split
+          (select-window (split-window-below))
+          (find-file full-path))
+         ((memq 'shift mods)   ; vertical split
+          (select-window (split-window-right))
+          (find-file full-path))
+         (t                    ; normal open
+          (find-file full-path)))))))
 
 ;; --- project-wide cycling
 
@@ -116,7 +129,7 @@
   "Cycle project bookmarks. DIRECTION is 1 (next) or -1 (prev)."
   (let* ((root (arrow-project--root))
          (alist (arrow-project--load root))
-         (current-file (when (buffer-file-name) 
+         (current-file (when (buffer-file-name)
                          (file-relative-name (buffer-file-name) root)))
          (len (length alist))
          (current-idx nil)
@@ -127,7 +140,7 @@
       (when (string= (cdr item) current-file)
         (setq current-idx counter))
       (setq counter (1+ counter)))
-    
+
     (let* ((new-idx (if current-idx (mod (+ current-idx direction) len) 0))
            (target (nth new-idx alist)))
       (find-file (expand-file-name (cdr target) root))

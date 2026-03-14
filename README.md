@@ -77,12 +77,15 @@ Use these when you've confidently memorized your marks.
 
 #### Example keybinds
 ```elisp
+;; Buffer
 (define-key arrow-mode-map (kbd "C-c b a") #'arrow-add) ;; add line number mark
 (define-key arrow-mode-map (kbd "C-c b l") #'arrow-show) ;; show lines numbers
 (define-key arrow-mode-map (kbd "C-c b d") #'arrow-delete) ;; delete line number
 (define-key arrow-mode-map (kbd "C-c b j") #'arrow-jump-buffer) ;; jump to line (no UI)
 (define-key arrow-mode-map (kbd "C-c b n") #'arrow-next-line) ;; next line
 (define-key arrow-mode-map (kbd "C-c b p") #'arrow-prev-line) ;; previous line
+
+;; Project
 (define-key arrow-mode-map (kbd "C-c p a") #'arrow-project-add) ;; add project file mark
 (define-key arrow-mode-map (kbd "C-c p l") #'arrow-project-show) ;; show all files
 (define-key arrow-mode-map (kbd "C-c p d") #'arrow-project-delete) ;; delete file

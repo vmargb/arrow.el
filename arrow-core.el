@@ -1,5 +1,6 @@
 ;;; arrow-core.el --- shared helpers for arrow -*- lexical-binding: t; -*-
 
+;;; commentary:
 ;; Minimal shared core used by arrow.el and arrow-project.el
 ;; Exports:
 ;;   arrow--get-storage-path, arrow--storage-file (helper),
@@ -7,9 +8,6 @@
 ;;   arrow--find-free-key-in,
 ;;   arrow--show-popup (generic popup)
 ;;   face: arrow-key-face
-
-;;; commentary:
-;; Shared utility functions to handle arrow and arrow-core functionality.
 
 (require 'subr-x)
 
@@ -25,6 +23,7 @@
   :type 'directory
   :group 'arrow-core)
 
+
 ;; popup state
 (defvar arrow--popup-frame nil)
 (defvar arrow--popup-window nil)
@@ -33,6 +32,7 @@
   '((t (:inherit font-lock-keyword-face :weight bold :foreground "#FF6B6B")))
   "Face for highlighting bookmark keys in the popup."
   :group 'arrow-core)
+
 
 ;;; storage helpers
 
@@ -76,7 +76,17 @@
           (setq keys nil))))
     (or found (user-error "No free bookmark keys available (1-9, a-z)"))))
 
+
 ;;; popup display helpers
+
+(defun arrow-close-popup ()
+  "Close the transient popup window/frame."
+  (when (frame-live-p arrow--popup-frame)
+    (delete-frame arrow--popup-frame)
+    (setq arrow--popup-frame nil))
+  (when (window-live-p arrow--popup-window)
+    (delete-window arrow--popup-window)
+    (setq arrow--popup-window nil)))
 
 (defun arrow--display-child-frame (buf)
   "Display BUF in a centered child frame (GUI only)."
@@ -90,59 +100,70 @@
          (left (/ (- (frame-pixel-width parent) px-width) 2))
          (top (/ (- (frame-pixel-height parent) px-height) 2))
          (frame (make-frame
-                 `((parent-frame . ,parent)
-                   (minibuffer . nil)
-                   (undecorated . t)
-                   (internal-border-width . 3)
-                   (background-color . ,(face-background 'tooltip nil t))
-                   (width . ,width-chars)
-                   (height . ,lines)
-                   (left . ,left)
-                   (top . ,top)
+                 `((parent-frame . ,parent) (minibuffer . nil) (undecorated . t)
+                   (internal-border-width . 3) (background-color . ,(face-background 'tooltip nil t))
+                   (width . ,width-chars) (height . ,lines) (left . ,left) (top . ,top)
                    (no-accept-focus . t)))))
     (set-window-buffer (frame-root-window frame) buf)
     (set-window-dedicated-p (frame-root-window frame) t)
     (make-frame-visible frame)
     (setq arrow--popup-frame frame)))
 
+
+(defvar arrow--shift-map
+  '((?! . ?1) (?@ . ?2) (?# . ?3) (?$ . ?4) (?% . ?5)
+    (?^ . ?6) (?& . ?7) (?* . ?8) (?( . ?9) (?) . ?0)
+    (?_ . ?-) (?+ . ?=) (?{ . ?[) (?} . ?]) (?| . ?\\)
+    (?: . ?\;) (?\" . ?') (?< . ?,) (?> . ?.) (?? . ?/))
+  "Mapping of shifted symbols to their base keys.")
+
 (defun arrow--show-popup (title alist format-fn)
-  "Generic transient popup.  Return selected (KEY . VAL) or nil.
-TITLE is displayed at top; ALIST is the list to show; FORMAT-FN is a
-function (key val) -> string for each line."
-  (unless alist (user-error "No items to display"))
+  "Generic transient popup. Returns (SELECTION . MODIFIERS) or nil."
+  (unless alist (user-error "No bookmarks to display"))
   (let ((buf (get-buffer-create " *arrow-popup*"))
         (text-lines '())
         (result nil))
+
     (dolist (bm alist)
       (push (funcall format-fn (car bm) (cdr bm)) text-lines))
 
     (with-current-buffer buf
       (erase-buffer)
-      (setq mode-line-format nil header-line-format nil cursor-type nil)
-      (insert (propertize (format " %s (Press key to jump, q/C-g to quit)\n\n" title) 'face 'bold))
+      ;; sticky legend using header-line-format to avoid scrolling
+      (setq header-line-format 
+            (concat (propertize (format " %s " title) 'face 'bold)
+                    (propertize " [Key] Jump | [C-Key] Split - | [S-Key] Split | | [q] Quit" 
+                                'face 'shadow)))
+      (setq mode-line-format nil cursor-type nil)
       (insert (string-join (reverse text-lines) "\n")))
 
     (if (display-graphic-p)
         (arrow--display-child-frame buf)
-      (setq arrow--popup-window
-            (display-buffer buf '((display-buffer-at-bottom) (window-height . fit-window-to-buffer)))))
+      (setq arrow--popup-window (display-buffer buf '((display-buffer-at-bottom)
+                                                      (window-height . fit-window-to-buffer)))))
     (redisplay t)
 
     (unwind-protect
-        (let ((key (read-key "Key: ")))
+        (let* ((event (read-key "Select: "))
+               (raw-key (event-basic-type event))
+               (mods (event-modifiers event))
+               ;; check if it's an uppercase letter (A -> a)
+               (is-upper (and (characterp raw-key) 
+                              (not (eq raw-key (downcase raw-key)))))
+               ;; check if it's a shifted symbol (! -> 1)
+               (shifted-symbol (alist-get raw-key arrow--shift-map))
+               ;; normalize key to lookup in alist
+               (base-key (cond (is-upper (downcase raw-key))
+                               (shifted-symbol shifted-symbol)
+                               (t raw-key)))
+               (final-mods (append mods ; combine modifer detection
+                                   (when (or is-upper shifted-symbol) '(shift)))))
           (cond
-           ((or (eq key ?\C-g) (eq key ?q))
-            (message "Cancelled."))
-           ((alist-get key alist)
-            ;; use assoc to return the original cons cell
-            (setq result (assoc key alist)))
-           (t (message "No item for key: %c" key))))
-      (when (frame-live-p arrow--popup-frame)
-        (delete-frame arrow--popup-frame)
-        (setq arrow--popup-frame nil))
-      (when (window-live-p arrow--popup-window)
-        (delete-window arrow--popup-window)
-        (setq arrow--popup-window nil)))
+           ((or (eq event ?\C-g) (eq event ?q)) (message "Cancelled."))
+           ((assoc base-key alist)
+            (setq result (cons (assoc base-key alist) final-mods)))
+           (t (message "No bookmark for key: %s" (single-key-description event)))))
+      (arrow-close-popup))
     result))
 
 (provide 'arrow-core)

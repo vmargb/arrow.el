@@ -1,7 +1,7 @@
 ;;; arrow.el --- File-local and Project-local transient bookmarks -*- lexical-binding: t; -*-
 
 ;; Author: vmargb
-;; Version: 0.3.1
+;; Version: 0.3.2
 ;; Package-Requires: ((emacs "28.1"))
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
@@ -228,73 +228,11 @@
 
 ;;; Display and Jump Logic
 
-(defun arrow-close-popup ()
-  "Close the transient popup window/frame."
-  (when (frame-live-p arrow--popup-frame)
-    (delete-frame arrow--popup-frame)
-    (setq arrow--popup-frame nil))
-  (when (window-live-p arrow--popup-window)
-    (delete-window arrow--popup-window)
-    (setq arrow--popup-window nil)))
-
-(defun arrow--display-child-frame (buf)
-  "Display BUF in a centered child frame (GUI only)."
-  (let* ((parent (selected-frame))
-         (lines (+ 2 (with-current-buffer buf (count-lines (point-min) (point-max)))))
-         (width-chars 75)
-         (char-width (or (frame-char-width parent) 10))
-         (char-height (or (frame-char-height parent) 20))
-         (px-width (* width-chars char-width))
-         (px-height (* lines char-height))
-         (left (/ (- (frame-pixel-width parent) px-width) 2))
-         (top (/ (- (frame-pixel-height parent) px-height) 2))
-         (frame (make-frame
-                 `((parent-frame . ,parent) (minibuffer . nil) (undecorated . t)
-                   (internal-border-width . 3) (background-color . ,(face-background 'tooltip nil t))
-                   (width . ,width-chars) (height . ,lines) (left . ,left) (top . ,top)
-                   (no-accept-focus . t)))))
-    (set-window-buffer (frame-root-window frame) buf)
-    (set-window-dedicated-p (frame-root-window frame) t)
-    (make-frame-visible frame)
-    (setq arrow--popup-frame frame)))
-
-(defun arrow--show-popup (title alist format-fn)
-  "Generic transient popup logic. Returns the selected (key . value) or nil."
-  (unless alist (user-error "No bookmarks to display"))
-  (let ((buf (get-buffer-create " *arrow-popup*"))
-        (text-lines '())
-        (result nil))
-
-    (dolist (bm alist)
-      (push (funcall format-fn (car bm) (cdr bm)) text-lines))
-
-    (with-current-buffer buf
-      (erase-buffer)
-      (setq mode-line-format nil header-line-format nil cursor-type nil)
-      (insert (propertize (format " %s (Press key to jump, q/C-g to quit)\n\n" title) 'face 'bold))
-      (insert (string-join (reverse text-lines) "\n")))
-
-    (if (display-graphic-p)
-        (arrow--display-child-frame buf)
-      (setq arrow--popup-window (display-buffer buf '((display-buffer-at-bottom)
-                                                      (window-height . fit-window-to-buffer)))))
-    (redisplay t)
-
-    (unwind-protect
-        (let ((key (read-key "Bookmark key: ")))
-          (cond
-           ((or (eq key ?\C-g) (eq key ?q)) (message "Cancelled."))
-           ((alist-get key alist) (setq result (assoc key alist)))
-           (t (message "No bookmark for key: %c" key))))
-      (arrow-close-popup))
-
-    result)) ;; return the selection AFTER the popup closes
-
-
 (defun arrow-show ()
-  "Display file bookmarks in a popup and jump via single keypress."
+  "Display file bookmarks in a popup and jump via single keypress.
+Supports splits: C-key (horizontal), M-key (vertical)."
   (interactive)
-  (when-let* ((selection
+  (when-let* ((result
                (arrow--show-popup
                 "Bookmarks" arrow-alist
                 (lambda (char marker)
@@ -313,19 +251,22 @@
                             (propertize (char-to-string char)
                                         'face 'arrow-key-face)
                             line
-                            (string-trim preview))))))
+                            (string-trim preview)))))))
+    (let* ((selection (car result))
+           (mods (cdr result))
+           (key (car selection))
+           (jump-marker (cdr selection)))
 
-              (key (car selection))
-              (jump-marker (cdr selection)))
+      (when arrow-auto-promote
+        (arrow--promote key))
 
-    ;; Actions run safely outside popup lifecycle
-    (when arrow-auto-promote
-      (arrow--promote key))
+      (when (marker-buffer jump-marker)
+        (cond
+         ((memq 'control mods) (select-window (split-window-below)))
+         ((memq 'shift mods)    (select-window (split-window-right))))
 
-    (when (marker-buffer jump-marker)
-      (switch-to-buffer (marker-buffer jump-marker))
-      (goto-char jump-marker))))
-
+        (switch-to-buffer (marker-buffer jump-marker))
+        (goto-char jump-marker)))))
 
 ;; --- Buffer-local cycling
 
