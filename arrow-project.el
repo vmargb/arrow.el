@@ -110,6 +110,31 @@
             (arrow-project--save root new-alist)))
         (find-file (expand-file-name path root))))))
 
+;; --- project-wide cycling
+
+(defun arrow-project-cycle (direction)
+  "Cycle project bookmarks. DIRECTION is 1 (next) or -1 (prev)."
+  (let* ((root (arrow-project--root))
+         (alist (arrow-project--load root))
+         (current-file (when (buffer-file-name) 
+                         (file-relative-name (buffer-file-name) root)))
+         (len (length alist))
+         (current-idx nil)
+         (counter 0))
+    (unless alist (user-error "No project bookmarks"))
+    ;; find the current index
+    (dolist (item alist)
+      (when (string= (cdr item) current-file)
+        (setq current-idx counter))
+      (setq counter (1+ counter)))
+    
+    (let* ((new-idx (if current-idx (mod (+ current-idx direction) len) 0))
+           (target (nth new-idx alist)))
+      (find-file (expand-file-name (cdr target) root))
+      (message "Project [%c]: %s" (car target) (cdr target)))))
+
+(defun arrow-project-next () (interactive) (arrow-project-cycle 1))
+(defun arrow-project-prev () (interactive) (arrow-project-cycle -1))
 
 (provide 'arrow-project)
 ;;; arrow-project.el ends here

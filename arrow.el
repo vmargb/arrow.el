@@ -1,7 +1,7 @@
 ;;; arrow.el --- File-local and Project-local transient bookmarks -*- lexical-binding: t; -*-
 
 ;; Author: vmargb
-;; Version: 0.3.0
+;; Version: 0.3.1
 ;; Package-Requires: ((emacs "28.1"))
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
@@ -290,6 +290,7 @@
 
     result)) ;; return the selection AFTER the popup closes
 
+
 (defun arrow-show ()
   "Display file bookmarks in a popup and jump via single keypress."
   (interactive)
@@ -324,6 +325,41 @@
     (when (marker-buffer jump-marker)
       (switch-to-buffer (marker-buffer jump-marker))
       (goto-char jump-marker))))
+
+
+;; --- Buffer-local cycling
+
+(defun arrow--get-sorted-alist ()
+  "Return `arrow-alist' sorted by marker position."
+  (sort (copy-sequence arrow-alist)
+        (lambda (a b) (< (marker-position (cdr a)) (marker-position (cdr b))))))
+
+(defun arrow-next-line ()
+  "Move to the next local bookmark in the buffer."
+  (interactive)
+  (unless arrow-alist (user-error "No buffer bookmarks"))
+  (let* ((sorted (arrow--get-sorted-alist))
+         (target (catch 'found
+                   (dolist (bm sorted)
+                     (when (> (marker-position (cdr bm)) (point))
+                       (throw 'found bm)))
+                   (car sorted)))) ; wrap to start if none found after point
+    (goto-char (cdr target))
+    (message "Local bookmark: %c" (car target))))
+
+(defun arrow-prev-line ()
+  "Move to the previous local bookmark."
+  (interactive)
+  (unless arrow-alist (user-error "No buffer bookmarks"))
+  (let* ((sorted (reverse (arrow--get-sorted-alist)))
+         (target (catch 'found
+                   (dolist (bm sorted)
+                     (when (< (marker-position (cdr bm)) (point))
+                       (throw 'found bm)))
+                   (car sorted)))) ; wrap to end if none found before point
+    (goto-char (cdr target))
+    (message "Local bookmark: %c" (car target))))
+
 
 ;;; Minor Mode
 

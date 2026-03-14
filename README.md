@@ -51,18 +51,6 @@ Ensure you have `(elpaca-use-package-mode)`
 (setq arrow-visual-marker-position 'left) ;; marker position(left or right)
 ```
 
-#### Example keybinds
-```elisp
-(define-key arrow-mode-map (kbd "C-c b a") #'arrow-add)
-(define-key arrow-mode-map (kbd "C-c b l") #'arrow-show)
-(define-key arrow-mode-map (kbd "C-c b d") #'arrow-delete)
-(define-key arrow-mode-map (kbd "C-c b j") #'arrow-jump-buffer)
-(define-key arrow-mode-map (kbd "C-c p a") #'arrow-project-add)
-(define-key arrow-mode-map (kbd "C-c p l") #'arrow-project-show)
-(define-key arrow-mode-map (kbd "C-c p d") #'arrow-project-delete)
-(define-key arrow-mode-map (kbd "C-c p j") #'arrow-jump-project)
-```
-
 ## Commands
 
 | Command | Description |
@@ -85,6 +73,23 @@ Use these when you've confidently memorized your marks.
 | `arrow-jump-buffer` | Instantly jump to buffer line without popup menu. |
 | `arrow-jump-project` | Instantly jump to project file without popup menu. |
 | `arrow-jump` | Unified command for the above two options. |
+
+
+#### Example keybinds
+```elisp
+(define-key arrow-mode-map (kbd "C-c b a") #'arrow-add) ;; add line number mark
+(define-key arrow-mode-map (kbd "C-c b l") #'arrow-show) ;; show lines numbers
+(define-key arrow-mode-map (kbd "C-c b d") #'arrow-delete) ;; delete line number
+(define-key arrow-mode-map (kbd "C-c b j") #'arrow-jump-buffer) ;; jump to line (no UI)
+(define-key arrow-mode-map (kbd "C-c b n") #'arrow-next-line) ;; next line
+(define-key arrow-mode-map (kbd "C-c b p") #'arrow-prev-line) ;; previous line
+(define-key arrow-mode-map (kbd "C-c p a") #'arrow-project-add) ;; add project file mark
+(define-key arrow-mode-map (kbd "C-c p l") #'arrow-project-show) ;; show all files
+(define-key arrow-mode-map (kbd "C-c p d") #'arrow-project-delete) ;; delete file
+(define-key arrow-mode-map (kbd "C-c p j") #'arrow-jump-project) ;; jump to file (no UI)
+(define-key arrow-mode-map (kbd "C-c p n") #'arrow-project-next) ;; next file
+(define-key arrow-mode-map (kbd "C-c p p") #'arrow-project-prev) ;; previous file
+```
 
 
 ## Screenshot
