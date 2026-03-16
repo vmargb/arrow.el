@@ -117,6 +117,11 @@
     (?: . ?\;) (?\" . ?') (?< . ?,) (?> . ?.) (?? . ?/))
   "Mapping of shifted symbols to their base keys.")
 
+(defface arrow-legend-face
+  '((t (:inherit shadow :slant italic :height 0.9)))
+  "Face for the legend shown in the popup header-line."
+  :group 'arrow-core)
+
 (defun arrow--show-popup (title alist format-fn)
   "Generic transient popup. Returns (SELECTION . MODIFIERS) or nil."
   (unless alist (user-error "No bookmarks to display"))
@@ -130,10 +135,10 @@
     (with-current-buffer buf
       (erase-buffer)
       ;; sticky legend using header-line-format to avoid scrolling
-      (setq header-line-format 
+      (setq header-line-format
             (concat (propertize (format " %s " title) 'face 'bold)
-                    (propertize " [Key] Jump | [C-Key] Split - | [S-Key] Split | | [q] Quit" 
-                                'face 'shadow)))
+                    (propertize " [Key] Jump | [C-Key] Split - | [S-Key] Split | | [q] Quit"
+                                'face 'arrow-legend-face)))
       (setq mode-line-format nil cursor-type nil)
       (insert (string-join (reverse text-lines) "\n")))
 
@@ -148,7 +153,7 @@
                (raw-key (event-basic-type event))
                (mods (event-modifiers event))
                ;; check if it's an uppercase letter (A -> a)
-               (is-upper (and (characterp raw-key) 
+               (is-upper (and (characterp raw-key)
                               (not (eq raw-key (downcase raw-key)))))
                ;; check if it's a shifted symbol (! -> 1)
                (shifted-symbol (alist-get raw-key arrow--shift-map))

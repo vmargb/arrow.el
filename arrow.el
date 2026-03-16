@@ -1,11 +1,11 @@
 ;;; arrow.el --- File-local and Project-local transient bookmarks -*- lexical-binding: t; -*-
 
 ;; Author: vmargb
-;; Version: 0.3.2
+;; Version: 0.4.0
 ;; Package-Requires: ((emacs "28.1"))
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
-;; License: MIT
+;; License: GPL-3.0
 
 ;; Description: Buffer-local and project-local bookmarks with a centered transient hover window.
 

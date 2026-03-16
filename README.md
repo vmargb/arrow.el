@@ -3,13 +3,15 @@
 arrow.el is heavily inspired by the neovim plugin [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim)
 
 ## About
-Editors need three distinct bookmark layers to stay organized:
-- **Global**
-- **Project**
-- **Buffer**
+Arrow introduces three layers of bookmarks to help you stay organized:
+- **Global** - cross-project bookmarks
+- **Project** - per-project file boookmarks
+- **Buffer** - per-file line number bookmarks
 
-This provides both per-project bookmarks to frequently used files and per-buffer bookmarks to specific line numbers. Emacs and Vim/Evil registers *can* do this, but they aren’t properly isolated by buffer or project and Evil is vulnerable to clipboard actions (yanks, deletes), which can cause unwanted behaviour. arrow.el also adds QOL features such as visual fringe markers, a floating hover menu, and at most two keybinds to jump to any bookmark(delegating all search activity to project instead)
+arrow.el provides seamless navigation across all three layers with a unified interface. Unlike Emacs registers or Vim/Evil marks, these are properly isolated per layer and immune to clipboard pollution (yanks/deletes won't litter your bookmarks). QOL features include visual fringe markers, a floating hover menu, and at most two keybinds to jump to any bookmark.
 
+### Org integration
+The Org layer extends Arrow further by dynamically linking your code to living documentation. Each project automatically gets its own Org file, allowing every source file to connect back to it. Additionally, every file in a project has its own unique org file.
 ---
 
 ## Installation
@@ -20,7 +22,8 @@ This provides both per-project bookmarks to frequently used files and per-buffer
 (use-package arrow
   :vc (:fetcher "github" :repo "vmargb/arrow.el")
   :config
-  (arrow-mode 1))
+  (require 'arrow-org) ; optional org bookmarks
+  (setq arrow-org-directory "~/org/arrow-notes/"))
 ```
 
 ### Straight
@@ -28,7 +31,8 @@ This provides both per-project bookmarks to frequently used files and per-buffer
 (use-package arrow
   :straight (arrow :type git :host github :repo "vmargb/arrow.el")
   :config
-  (arrow-mode 1))
+  (require 'arrow-org) ; optional org bookmarks
+  (setq arrow-org-directory "~/org/arrow-notes/"))
 ```
 
 ### Elpaca
@@ -38,7 +42,8 @@ Ensure you have `(elpaca-use-package-mode)`
 (use-package arrow
   :elpaca (arrow :host github :repo "vmargb/arrow.el")
   :config
-  (arrow-mode 1))
+  (require 'arrow-org) ; optional org bookmarks
+  (setq arrow-org-directory "~/org/arrow-notes/"))
 ```
 
 
@@ -49,21 +54,30 @@ Ensure you have `(elpaca-use-package-mode)`
 (setq arrow-auto-promote nil) ;; auto rearranges list when key added or used
 (setq arrow-visual-marker t) ;; displays visual marker on line number
 (setq arrow-visual-marker-position 'left) ;; marker position(left or right)
+;; Org layer settings
+(setq arrow-org-window-behavior 'same-window) ;; 'same-window, 'other-window, 'other-frame
 ```
 
 ## Commands
 
-| Command | Description |
-|-------------|---------|
-| `arrow-add` | Create or overwrite a bookmark at point. Prompts for a single character (a-z or 1-9). |
-| `arrow-show` | Display popup of all bookmarks for this file. Press any bookmark key to jump, `q` or `C-g` to cancel. |
-| `arrow-delete` | Remove a specific bookmark by its character key. |
-| `arrow-clear-all` | Delete all bookmarks for the current file. |
-| `arrow-promote-bookmark` | Manually promote a bookmark to the top of the list. |
-| `arrow-project-add` | Add file to project bookmarks |
-| `arrow-project-show` | Show project bookmarks |
-| `arrow-project-delete` | Delete bookmark for this project |
+### Buffer bookmarks (line numbers)
 
+| Command                  | Description                               |
+| ------------------------ | ----------------------------------------- |
+| `arrow-add`              | Create bookmark at point (keys: a-z, 1-9) |
+| `arrow-show`             | Popup menu of buffer bookmarks            |
+| `arrow-delete`           | Remove specific bookmark                  |
+| `arrow-clear-all`        | Delete all buffer bookmarks               |
+| `arrow-promote-bookmark` | Move bookmark to top of list              |
+| `arrow-next-line` / `arrow-prev-line` | Cycle bookmarks                       |
+
+### Project bookmarks (files)
+| Command                                     | Description                           |
+| ------------------------------------------- | ------------------------------------- |
+| `arrow-project-add`                         | Add current file to project bookmarks |
+| `arrow-project-show`                        | Show project bookmark menu            |
+| `arrow-project-delete`                      | Remove project bookmark               |
+| `arrow-project-next` / `arrow-project-prev` | Cycle bookmarks                       |
 
 ### Unified workflow (No UI)
 Use these when you've confidently memorized your marks.
@@ -73,6 +87,16 @@ Use these when you've confidently memorized your marks.
 | `arrow-jump-buffer` | Instantly jump to buffer line without popup menu. |
 | `arrow-jump-project` | Instantly jump to project file without popup menu. |
 | `arrow-jump` | Unified command for the above two options. |
+
+### Org bookmarks
+| Command                        | Description                              |
+| ------------------------------ | ---------------------------------------- |
+| `arrow-org-open-project`       | Toggle project notes ↔ source file       |
+| `arrow-org-open-file`          | Toggle file-specific notes ↔ source file |
+| `arrow-org-quick-capture`      | Capture note without leaving buffer      |
+| `arrow-org-list-project-notes` | Browse all project notes                 |
+
+**Smart return**: `arrow-org-open-project` and `open-file` remembers exactly which file you came from even across different files in the same project and restores your cursor position.
 
 
 #### Example keybinds
@@ -92,6 +116,12 @@ Use these when you've confidently memorized your marks.
 (define-key arrow-mode-map (kbd "C-c p j") #'arrow-jump-project) ;; jump to file (no UI)
 (define-key arrow-mode-map (kbd "C-c p n") #'arrow-project-next) ;; next file
 (define-key arrow-mode-map (kbd "C-c p p") #'arrow-project-prev) ;; previous file
+
+;; Org
+(define-key arrow-mode-map (kbd "C-c o o") #'arrow-org-open-project)  ; project notes
+(define-key arrow-mode-map (kbd "C-c o f") #'arrow-org-open-file)     ; file notes  
+(define-key arrow-mode-map (kbd "C-c o c") #'arrow-org-quick-capture) ; capture without leaving
+(define-key arrow-mode-map (kbd "C-c o l") #'arrow-org-list-project-notes)
 ```
 
 
@@ -107,3 +137,4 @@ Use these when you've confidently memorized your marks.
 
 - arrow-jump repeat style feature to allow fast cycling without repetition
 - Unified hydra-like menu that shows buffer-local + project bookmarks together
+- Org bookmark integration with org-capture templates
