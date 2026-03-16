@@ -139,7 +139,9 @@
             (concat (propertize (format " %s " title) 'face 'bold)
                     (propertize " [Key] Jump | [C-Key] Split - | [S-Key] Split | | [q] Quit"
                                 'face 'arrow-legend-face)))
-      (setq mode-line-format nil cursor-type nil)
+      (setq mode-line-format nil
+            cursor-type nil
+            truncate-lines t) ; truncate line to prevent line wrapping bug
       (insert (string-join (reverse text-lines) "\n")))
 
     (if (display-graphic-p)

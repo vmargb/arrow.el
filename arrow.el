@@ -239,19 +239,21 @@ Supports splits: C-key (horizontal), M-key (vertical)."
                   (let* ((line (if (marker-buffer marker)
                                    (line-number-at-pos marker)
                                  "?"))
-                         (preview (if (marker-buffer marker)
-                                      (with-current-buffer (marker-buffer marker)
-                                        (save-excursion
-                                          (goto-char marker)
-                                          (buffer-substring
-                                           (line-beginning-position)
-                                           (line-end-position))))
-                                    "<dead marker>")))
+                         (raw-preview (if (marker-buffer marker)
+                                          (with-current-buffer (marker-buffer marker)
+                                            (save-excursion
+                                              (goto-char marker)
+                                              (buffer-substring
+                                               (line-beginning-position)
+                                               (line-end-position))))
+                                        "<dead marker>"))
+                         ;; Truncate the string so it fits nicely in the 75-char frame
+                         (preview (truncate-string-to-width (string-trim raw-preview) 55 0 nil "…")))
                     (format " [%s] Line %-4s %s"
                             (propertize (char-to-string char)
                                         'face 'arrow-key-face)
                             line
-                            (string-trim preview)))))))
+                            preview))))))
     (let* ((selection (car result))
            (mods (cdr result))
            (key (car selection))
