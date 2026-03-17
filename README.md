@@ -21,16 +21,16 @@
 > arrow.el is heavily inspired by the neovim plugin [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim)
 
 ## About
+<div align="center">
+  <img src="screenshots/options.png" alt="Bookmark screenshot" width="400"/>
+  <br>
+</div>
+
 Arrow introduces four layers of bookmarks to help you stay organized:
 - **Global** - cross-project bookmarks
 - **Project** - per-project file boookmarks
 - **Buffer** - per-file line number bookmarks
 - **Org** - per-project & per-buffer org bookmarks
-
-<div align="center">
-  <img src="screenshots/options.png" alt="Bookmark screenshot" width="500"/>
-  <br>
-</div>
 
 arrow.el provides seamless navigation across all layers with a unified interface. Unlike Emacs registers or Vim/Evil marks, these are properly isolated per layer and immune to clipboard pollution (yanks/deletes won't litter your bookmarks). QOL features include visual fringe markers, a floating hover menu, and at most two keybinds to jump to any bookmark.
 
@@ -115,7 +115,7 @@ Ensure you have `(elpaca-use-package-mode)`
 **Smart return**: `arrow-org-open-project` and `open-file` remembers exactly which file you came from even across different files in the same project and restores your cursor position.
 
 
-### Unified workflow (simpler)
+## Unified workflow (simpler)
 If you don't want to memorize the above commands use `arrow-jump` will take you everywhere!
 
 | Command | Description |
