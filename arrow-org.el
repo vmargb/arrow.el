@@ -65,6 +65,42 @@
                     (file-name-base note-path)
                     (format-time-string "%Y-%m-%d")))))
 
+(defun arrow-org--return-to-source (source &optional return-pos)
+  "Return to SOURCE file, closing the org note's window or frame.
+Mirrors how the note was opened, so same-window uses `find-file', other-window
+deletes the note window, other-frame deletes the note frame"
+  (save-buffer)
+  (pcase arrow-org-window-behavior
+    ('other-frame
+     ;; the source is already open in the original frame so close this one
+     ;; delete-frame returns focus to the original frame automatically.
+     (let ((source-buf (find-buffer-visiting source)))
+       (delete-frame)
+       (when source-buf
+         (switch-to-buffer source-buf)
+         (when return-pos
+           (goto-char (string-to-number return-pos))))))
+    ('other-window
+     ;; the source is still visible in the original windows, close this split
+     (let* ((source-buf (find-buffer-visiting source))
+            (source-win (and source-buf (get-buffer-window source-buf))))
+       (if source-win
+           (progn
+             ;; set position before switching windows
+             (when return-pos
+               (with-current-buffer source-buf
+                 (goto-char (string-to-number return-pos))))
+             (delete-window))
+         ;; fallback, source somehow not visible, just open it normally
+         (find-file source)
+         (when return-pos
+           (goto-char (string-to-number return-pos))))))
+    (_
+     ;; same-window: replace current buffer with source as before
+     (find-file source)
+     (when return-pos
+       (goto-char (string-to-number return-pos))))))
+
 ;;; commands
 
 (defun arrow-org-open-project ()
@@ -74,12 +110,8 @@ Always returns to the specific file you came from."
   (if (arrow-org--is-note-buffer-p)
       ;; GOING BACK to file, get properties BEFORE leaving org buffer
       (if-let ((source (org-entry-get (point-min) "ARROW_SOURCE" t)))
-          (let ((return-pos (org-entry-get (point-min) "ARROW_POS" t)))
-            (save-buffer)
-            (find-file source)
-            ;; Restore position if we stored it
-            (when return-pos
-              (goto-char (string-to-number return-pos))))
+          (arrow-org--return-to-source
+           source (org-entry-get (point-min) "ARROW_POS" t))
         (message "No source link found."))
     ;; GOING TO NOTE, store current position for precise return
     (let* ((root (arrow-org--get-project-root))
@@ -99,9 +131,7 @@ Maintains separate note files per source file."
   (if (arrow-org--is-note-buffer-p)
       ;; GOING BACK
       (if-let ((source (org-entry-get (point-min) "ARROW_SOURCE" t)))
-          (progn
-            (save-buffer)
-            (find-file source))
+          (arrow-org--return-to-source source)
         (message "No source link found."))
     ;; GOING TO NOTE
     (unless (buffer-file-name) (user-error "Buffer has no file"))
