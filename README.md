@@ -4,13 +4,13 @@ arrow.el is heavily inspired by the neovim plugin [arrow.nvim](https://github.co
 
 <div align="center">
 
-  <h3>Bookmarks Example</h3>
+  <h3>Buffer-local marks</h3>
   <img src="screenshots/buffer-bookmarks.png" alt="Bookmark screenshot" width="600"/>
   <p><em>Example using my <code>init.el</code>: d → dired, o → org, l → langs, t → themes, m → magit</em></p>
 
   <br>
 
-  <h3>Project Example</h3>
+  <h3>Project marks</h3>
   <img src="screenshots/arrow-project.png" alt="Project screenshot" width="600"/>
   <p><em>Example using user Emacs directory</em></p>
 
@@ -145,7 +145,7 @@ Use these when you've confidently memorized your marks.
 ```elisp
 "m"  '(:ignore t :which-key "marks")
 
-;; Buffer layer
+;; arrow-local
 "mb" '(:ignore t :which-key "buffer")
 "mba" '(arrow-add          :which-key "add")
 "mbs" '(arrow-show         :which-key "show")
@@ -155,7 +155,7 @@ Use these when you've confidently memorized your marks.
 "mbp" '(arrow-prev-line    :which-key "prev")
 "mbj" '(arrow-jump-buffer  :which-key "jump")
 
-;; Project layer
+;; arrow-project
 "mp" '(:ignore t :which-key "project")
 "mpa" '(arrow-project-add    :which-key "add")
 "mps" '(arrow-project-show   :which-key "show")
@@ -164,7 +164,7 @@ Use these when you've confidently memorized your marks.
 "mpp" '(arrow-project-prev   :which-key "prev")
 "mpj" '(arrow-jump-project   :which-key "jump")
 
-;; Global layer
+;; arrow-global
 "mg" '(:ignore t :which-key "global")
 "mga" '(arrow-global-add    :which-key "add")
 "mgs" '(arrow-global-show   :which-key "show")
@@ -177,22 +177,13 @@ Use these when you've confidently memorized your marks.
 ;; Unified
 "mj" '(arrow-jump :which-key "jump (auto)")
 
-;; Org (unchanged, already has a good home)
+;; arrow-org
 "of" '(arrow-org-open-file          :which-key "org for this file")
 "op" '(arrow-org-open-project       :which-key "org for this project")
 "ol" '(arrow-org-list-project-notes :which-key "org list notes")
 ```
 
-## Screenshot
-![bookmark screenshot](screenshots/buffer-bookmarks.png)
-*Example using my init.el: d->dired, o->org, l->langs, t->themes, m->magit*
-
-![project screenshot](screenshots/arrow-project.png)
-*Example using user emacs directory*
-
-
 ## Todo
 
 - arrow-jump repeat style feature to allow fast cycling without repetition
 - Unified hydra-like menu that shows buffer-local + project bookmarks together
-- Org bookmark integration with org-capture templates
