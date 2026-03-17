@@ -2,6 +2,23 @@
 
 arrow.el is heavily inspired by the neovim plugin [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim)
 
+<div align="center">
+
+  <h3>Bookmarks Example</h3>
+  <img src="screenshots/buffer-bookmarks.png" alt="Bookmark screenshot" width="600"/>
+  <p><em>Example using my <code>init.el</code>: d → dired, o → org, l → langs, t → themes, m → magit</em></p>
+
+  <br>
+
+  <h3>Project Example</h3>
+  <img src="screenshots/arrow-project.png" alt="Project screenshot" width="600"/>
+  <p><em>Example using user Emacs directory</em></p>
+
+</div>
+
+
+---
+
 ## About
 Arrow introduces three layers of bookmarks to help you stay organized:
 - **Global** - cross-project bookmarks
@@ -95,7 +112,6 @@ Use these when you've confidently memorized your marks.
 | ------------------------------ | ---------------------------------------- |
 | `arrow-org-open-project`       | Toggle project notes ↔ source file       |
 | `arrow-org-open-file`          | Toggle file-specific notes ↔ source file |
-| `arrow-org-quick-capture`      | Capture note without leaving buffer      |
 | `arrow-org-list-project-notes` | Browse all project notes                 |
 
 **Smart return**: `arrow-org-open-project` and `open-file` remembers exactly which file you came from even across different files in the same project and restores your cursor position.
@@ -122,10 +138,50 @@ Use these when you've confidently memorized your marks.
 ;; Org
 (define-key arrow-mode-map (kbd "C-c o o") #'arrow-org-open-project)  ; project notes
 (define-key arrow-mode-map (kbd "C-c o f") #'arrow-org-open-file)     ; file notes  
-(define-key arrow-mode-map (kbd "C-c o c") #'arrow-org-quick-capture) ; capture without leaving
 (define-key arrow-mode-map (kbd "C-c o l") #'arrow-org-list-project-notes)
 ```
 
+**General keybinds:**
+```elisp
+"m"  '(:ignore t :which-key "marks")
+
+;; Buffer layer
+"mb" '(:ignore t :which-key "buffer")
+"mba" '(arrow-add          :which-key "add")
+"mbs" '(arrow-show         :which-key "show")
+"mbd" '(arrow-delete       :which-key "delete")
+"mbc" '(arrow-clear-all    :which-key "clear all")
+"mbn" '(arrow-next-line    :which-key "next")
+"mbp" '(arrow-prev-line    :which-key "prev")
+"mbj" '(arrow-jump-buffer  :which-key "jump")
+
+;; Project layer
+"mp" '(:ignore t :which-key "project")
+"mpa" '(arrow-project-add    :which-key "add")
+"mps" '(arrow-project-show   :which-key "show")
+"mpd" '(arrow-project-delete :which-key "delete")
+"mpn" '(arrow-project-next   :which-key "next")
+"mpp" '(arrow-project-prev   :which-key "prev")
+"mpj" '(arrow-jump-project   :which-key "jump")
+
+;; Global layer
+"mg" '(:ignore t :which-key "global")
+"mga" '(arrow-global-add    :which-key "add")
+"mgs" '(arrow-global-show   :which-key "show")
+"mgd" '(arrow-global-delete :which-key "delete")
+"mgc" '(arrow-global-clear-all :which-key "clear all")
+"mgn" '(arrow-global-next   :which-key "next")
+"mgp" '(arrow-global-prev   :which-key "prev")
+"mgj" '(arrow-jump-global   :which-key "jump")
+
+;; Unified
+"mj" '(arrow-jump :which-key "jump (auto)")
+
+;; Org (unchanged, already has a good home)
+"of" '(arrow-org-open-file          :which-key "org for this file")
+"op" '(arrow-org-open-project       :which-key "org for this project")
+"ol" '(arrow-org-list-project-notes :which-key "org list notes")
+```
 
 ## Screenshot
 ![bookmark screenshot](screenshots/buffer-bookmarks.png)
