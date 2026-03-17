@@ -1,7 +1,5 @@
 # arrow.el
 
-arrow.el is heavily inspired by the neovim plugin [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim)
-
 <div align="center">
 
   <h3>Buffer-local marks</h3>
@@ -19,13 +17,22 @@ arrow.el is heavily inspired by the neovim plugin [arrow.nvim](https://github.co
 
 ---
 
+> [!NOTE]
+> arrow.el is heavily inspired by the neovim plugin [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim)
+
 ## About
-Arrow introduces three layers of bookmarks to help you stay organized:
+Arrow introduces four layers of bookmarks to help you stay organized:
 - **Global** - cross-project bookmarks
 - **Project** - per-project file boookmarks
 - **Buffer** - per-file line number bookmarks
+- **Org** - per-project & per-buffer org bookmarks
 
-arrow.el provides seamless navigation across all three layers with a unified interface. Unlike Emacs registers or Vim/Evil marks, these are properly isolated per layer and immune to clipboard pollution (yanks/deletes won't litter your bookmarks). QOL features include visual fringe markers, a floating hover menu, and at most two keybinds to jump to any bookmark.
+<div align="center">
+  <img src="screenshots/options.png" alt="Bookmark screenshot" width="500"/>
+  <br>
+</div>
+
+arrow.el provides seamless navigation across all layers with a unified interface. Unlike Emacs registers or Vim/Evil marks, these are properly isolated per layer and immune to clipboard pollution (yanks/deletes won't litter your bookmarks). QOL features include visual fringe markers, a floating hover menu, and at most two keybinds to jump to any bookmark.
 
 ### Org integration
 The Org layer extends Arrow further by dynamically linking your code to living documentation. Each project automatically gets its own Org file, allowing every source file to connect back to it. Additionally, every file in a project has its own unique org note.
@@ -98,15 +105,6 @@ Ensure you have `(elpaca-use-package-mode)`
 | `arrow-project-delete`                      | Remove project bookmark               |
 | `arrow-project-next` / `arrow-project-prev` | Cycle bookmarks                       |
 
-### Unified workflow (No UI)
-Use these when you've confidently memorized your marks.
-
-| Command | Description |
-|-------------|---------|
-| `arrow-jump-buffer` | Instantly jump to buffer line without popup menu. |
-| `arrow-jump-project` | Instantly jump to project file without popup menu. |
-| `arrow-jump` | Unified command for the above two options. |
-
 ### Org bookmarks
 | Command                        | Description                              |
 | ------------------------------ | ---------------------------------------- |
@@ -115,6 +113,14 @@ Use these when you've confidently memorized your marks.
 | `arrow-org-list-project-notes` | Browse all project notes                 |
 
 **Smart return**: `arrow-org-open-project` and `open-file` remembers exactly which file you came from even across different files in the same project and restores your cursor position.
+
+
+### Unified workflow (simpler)
+If you don't want to memorize the above commands use `arrow-jump` will take you everywhere!
+
+| Command | Description |
+| `arrow-jump` | Unified command for every layer. |
+
 
 
 #### Example keybinds

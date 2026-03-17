@@ -145,45 +145,25 @@ Maintains separate note files per source file."
                        arrow-org-directory)))
       (arrow-org--open-and-setup note-path (buffer-file-name)))))
 
-(defun arrow-org-quick-capture ()
-  "Quickly capture a note without leaving current buffer.
-Inserts a timestamped entry into the project notes."
-  (interactive)
-  (let* ((root (arrow-org--get-project-root))
-         (notes-file (expand-file-name 
-                      (concat (file-name-nondirectory (directory-file-name root)) ".org")
-                      arrow-org-directory))
-         (source-file (buffer-file-name))
-         (selection (when (use-region-p)
-                      (buffer-substring-no-properties (region-beginning) (region-end)))))
-    (unless (file-exists-p (file-name-directory notes-file))
-      (make-directory (file-name-directory notes-file) t))
-    (with-current-buffer (find-file-noselect notes-file)
-      (goto-char (point-max))
-      (unless (bolp) (insert "\n"))
-      (insert (format "** TODO %s\n   :PROPERTIES:\n   :ARROW_SOURCE: %s\n   :CAPTURED: %s\n   :END:\n"
-                      (or selection "Note")
-                      source-file
-                      (format-time-string "%Y-%m-%d %H:%M")))
-      (when selection
-        (insert (format "   #+BEGIN_QUOTE\n   %s\n   #+END_QUOTE\n" selection)))
-      (save-buffer))
-    (message "Captured to %s" (file-name-nondirectory notes-file))))
-
 (defun arrow-org-list-project-notes ()
   "List all project notes with completion."
   (interactive)
   (let* ((root (arrow-org--get-project-root))
-         (project-dir (expand-file-name
-                       (file-name-nondirectory (directory-file-name root))
-                       arrow-org-directory))
-         (files (when (file-exists-p project-dir)
-                  (directory-files-recursively project-dir "\\.org$"))))
+         (project-name (file-name-nondirectory (directory-file-name root)))
+         (project-note (expand-file-name
+                        (concat project-name ".org")
+                        arrow-org-directory))
+         (project-dir (expand-file-name project-name arrow-org-directory))
+         (file-notes (when (file-exists-p project-dir)
+                       (directory-files-recursively project-dir "\\.org$")))
+         (files (append
+                 (when (file-exists-p project-note) (list project-note))
+                 file-notes)))
     (if files
         (find-file (completing-read "Project note: " files nil t))
       (message "No notes found for this project"))))
 
-;;; Legacy aliases for backward compatibility
+;;; legacy aliases for backward compatibility
 
 (defalias 'arrow-notes-open-project 'arrow-org-open-project)
 (defalias 'arrow-notes-open-file 'arrow-org-open-file)
