@@ -20,6 +20,10 @@
 > [!NOTE]
 > arrow.el is heavily inspired by the neovim plugin [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim)
 
+<p>
+<br>
+</p>
+
 ## About
 <div align="center">
   <img src="screenshots/options.png" alt="Bookmark screenshot" width="400"/>
@@ -116,10 +120,11 @@ Ensure you have `(elpaca-use-package-mode)`
 
 
 ## Unified workflow (simpler)
-If you don't want to memorize the above commands use `arrow-jump` will take you everywhere!
+If the above commands are too overwhelming `arrow-jump` has you covered.
 
-| Command | Description |
-| `arrow-jump` | Unified command for every layer. |
+| Command      | Description                     |
+| ------------ | ------------------------------- |
+| `arrow-jump` | Unified command for every layer |
 
 
 
@@ -154,7 +159,7 @@ If you don't want to memorize the above commands use `arrow-jump` will take you 
 ;; arrow-local
 "mb" '(:ignore t :which-key "buffer")
 "mba" '(arrow-add          :which-key "add")
-"mbs" '(arrow-show         :which-key "show")
+"mbl" '(arrow-show         :which-key "show")
 "mbd" '(arrow-delete       :which-key "delete")
 "mbc" '(arrow-clear-all    :which-key "clear all")
 "mbn" '(arrow-next-line    :which-key "next")
@@ -164,7 +169,7 @@ If you don't want to memorize the above commands use `arrow-jump` will take you 
 ;; arrow-project
 "mp" '(:ignore t :which-key "project")
 "mpa" '(arrow-project-add    :which-key "add")
-"mps" '(arrow-project-show   :which-key "show")
+"mpl" '(arrow-project-show   :which-key "show")
 "mpd" '(arrow-project-delete :which-key "delete")
 "mpn" '(arrow-project-next   :which-key "next")
 "mpp" '(arrow-project-prev   :which-key "prev")
@@ -173,7 +178,7 @@ If you don't want to memorize the above commands use `arrow-jump` will take you 
 ;; arrow-global
 "mg" '(:ignore t :which-key "global")
 "mga" '(arrow-global-add    :which-key "add")
-"mgs" '(arrow-global-show   :which-key "show")
+"mgl" '(arrow-global-show   :which-key "show")
 "mgd" '(arrow-global-delete :which-key "delete")
 "mgc" '(arrow-global-clear-all :which-key "clear all")
 "mgn" '(arrow-global-next   :which-key "next")

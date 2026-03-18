@@ -197,34 +197,20 @@
 
 
 (defun arrow-jump ()
-  "Unified dispatcher for jumping to line or project buffer."
+  "Unified dispatcher for jumping to a buffer, project, or global bookmark."
   (interactive)
-  (let ((has-buffer arrow-alist)
-        (has-project
-         (ignore-errors
-           (let ((root (arrow-project--root)))
-             (arrow-project--load root)))))
-    (cond
-     ;; both exist
-     ((and has-buffer has-project)
-      (let* ((b-str (propertize "[b]" 'face '(:foreground "DeepSkyBlue" :weight bold)))
-             (p-str (propertize "[p]" 'face '(:foreground "Orange" :weight bold)))
-             (choice (read-char-choice
-                      (format "%suffer or %sroject bookmark: " b-str p-str)
-                      '(?b ?p))))
-        (pcase choice
-          (?b (arrow-jump-buffer))
-          (?p (arrow-jump-project)))))
-
-     ;; only buffer
-     (has-buffer
-      (arrow-jump-buffer))
-
-     ;; only project
-     (has-project
-      (arrow-jump-project))
-     (t
-      (user-error "No bookmarks available")))))
+  (let* ((b-str (propertize "[b]" 'face '(:foreground "DeepSkyBlue"       :weight bold)))
+         (p-str (propertize "[p]" 'face '(:foreground "Orange"            :weight bold)))
+         (g-str (propertize "[g]" 'face '(:foreground "MediumSpringGreen" :weight bold)))
+         (o-str (propertize "[o]" 'face '(:foreground "MediumOrchid"      :weight bold)))
+         (choice (read-char-choice
+                  (format "%suffer, %sroject, %slobal, %srg: " b-str p-str g-str o-str)
+                  '(?b ?p ?g ?o))))
+    (pcase choice
+      (?b (arrow-show))
+      (?p (arrow-project-show))
+      (?g (arrow-global-show))
+      (?o (arrow-org-list-project-notes)))))
 
 ;;; Display and Jump Logic
 
@@ -342,6 +328,7 @@ Supports splits: C-key (horizontal), M-key (vertical)."
 
 (add-hook 'find-file-hook #'arrow--maybe-load)
 
+(require 'arrow-global)
 (require 'arrow-project)
 
 (provide 'arrow)
