@@ -5,7 +5,7 @@
 ;; Package-Requires: ((emacs "28.1"))
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
-;; License: GPL-3.0
+; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;; Description: Buffer-local and project-local bookmarks with a centered transient hover window.
 
@@ -37,7 +37,7 @@
   :group 'arrow)
 
 (defcustom arrow-visual-marker-position 'left
-  "Position for the fringe marker.  Can be 'left or 'right."
+  "Position for the fringe marker.  Can be left or right."
   :type '(choice
           (const :tag "Left fringe" left)
           (const :tag "Right fringe" right))
@@ -326,10 +326,11 @@ Supports splits: C-key (horizontal), M-key (vertical)."
     (when (and file (file-exists-p file))
       (unless arrow-mode (arrow-mode 1)))))
 
-(add-hook 'find-file-hook #'arrow--maybe-load)
+(add-hook 'find-file-hook #'arrow--maybe-load) ; change this, should rarely use add-hook
 
 (require 'arrow-global)
 (require 'arrow-project)
+(require 'arrow-org)
 
 (provide 'arrow)
 

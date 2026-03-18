@@ -1,5 +1,7 @@
 ;;; arrow-global.el --- Global transient bookmarks -*- lexical-binding: t; -*-
 
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
 ;;; Commentary:
 ;; Cross-project global file bookmarks, follows the same patterns as
 ;; arrow-project.el but keyed to absolute paths instead, stored in a

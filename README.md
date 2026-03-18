@@ -159,7 +159,7 @@ If the above commands are too overwhelming `arrow-jump` has you covered.
 ;; arrow-local
 "mb" '(:ignore t :which-key "buffer")
 "mba" '(arrow-add          :which-key "add")
-"mbl" '(arrow-show         :which-key "show")
+"mbs" '(arrow-show         :which-key "show")
 "mbd" '(arrow-delete       :which-key "delete")
 "mbc" '(arrow-clear-all    :which-key "clear all")
 "mbn" '(arrow-next-line    :which-key "next")
@@ -169,7 +169,7 @@ If the above commands are too overwhelming `arrow-jump` has you covered.
 ;; arrow-project
 "mp" '(:ignore t :which-key "project")
 "mpa" '(arrow-project-add    :which-key "add")
-"mpl" '(arrow-project-show   :which-key "show")
+"mps" '(arrow-project-show   :which-key "show")
 "mpd" '(arrow-project-delete :which-key "delete")
 "mpn" '(arrow-project-next   :which-key "next")
 "mpp" '(arrow-project-prev   :which-key "prev")
@@ -178,7 +178,7 @@ If the above commands are too overwhelming `arrow-jump` has you covered.
 ;; arrow-global
 "mg" '(:ignore t :which-key "global")
 "mga" '(arrow-global-add    :which-key "add")
-"mgl" '(arrow-global-show   :which-key "show")
+"mgs" '(arrow-global-show   :which-key "show")
 "mgd" '(arrow-global-delete :which-key "delete")
 "mgc" '(arrow-global-clear-all :which-key "clear all")
 "mgn" '(arrow-global-next   :which-key "next")
@@ -191,7 +191,7 @@ If the above commands are too overwhelming `arrow-jump` has you covered.
 ;; arrow-org
 "of" '(arrow-org-open-file          :which-key "org for this file")
 "op" '(arrow-org-open-project       :which-key "org for this project")
-"ol" '(arrow-org-list-project-notes :which-key "org list notes")
+"os" '(arrow-org-list-project-notes :which-key "org list notes")
 ```
 
 ## Todo

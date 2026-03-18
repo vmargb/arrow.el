@@ -1,13 +1,9 @@
 ;;; arrow-core.el --- shared helpers for arrow -*- lexical-binding: t; -*-
 
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
 ;;; commentary:
 ;; Minimal shared core used by arrow.el and arrow-project.el
-;; Exports:
-;;   arrow--get-storage-path, arrow--storage-file (helper),
-;;   arrow--save-data, arrow--load-data,
-;;   arrow--find-free-key-in,
-;;   arrow--show-popup (generic popup)
-;;   face: arrow-key-face
 
 (require 'subr-x)
 
@@ -113,7 +109,7 @@
 (defvar arrow--shift-map
   '((?! . ?1) (?@ . ?2) (?# . ?3) (?$ . ?4) (?% . ?5)
     (?^ . ?6) (?& . ?7) (?* . ?8) (?( . ?9) (?) . ?0)
-    (?_ . ?-) (?+ . ?=) (?{ . ?[) (?} . ?]) (?| . ?\\)
+    (?_ . ?-) (?+ . ?=) (?{ . ?\[) (?} . ?\]) (?| . ?\\)
     (?: . ?\;) (?\" . ?') (?< . ?,) (?> . ?.) (?? . ?/))
   "Mapping of shifted symbols to their base keys.")
 
@@ -123,7 +119,7 @@
   :group 'arrow-core)
 
 (defun arrow--show-popup (title alist format-fn)
-  "Generic transient popup. Returns (SELECTION . MODIFIERS) or nil."
+  "Generic transient popup.  Return (SELECTION . MODIFIERS) or nil."
   (unless alist (user-error "No bookmarks to display"))
   (let ((buf (get-buffer-create " *arrow-popup*"))
         (text-lines '())

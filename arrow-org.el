@@ -1,5 +1,7 @@
 ;;; arrow-org.el --- Dynamic note bookmarks for arrow -*- lexical-binding: t; -*-
 
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
 ;;; Commentary:
 ;; Project and file-specific note management with smart return navigation.
 
@@ -18,7 +20,7 @@
   :group 'arrow-org)
 
 (defcustom arrow-org-window-behavior 'same-window
-  "Ways to open notes are 'same-window, 'other-window, or 'other-frame."
+  "Ways to open notes are `same-window', `other-window', or `other-frame'."
   :type '(choice (const :tag "Same window" same-window)
                  (const :tag "Other window" other-window)
                  (const :tag "Other frame" other-frame))
@@ -29,7 +31,7 @@
 (defun arrow-org--is-note-buffer-p ()
   "Check if the current buffer is an Arrow note."
   (and (derived-mode-p 'org-mode)
-       (string-prefix-p (expand-file-name arrow-org-directory) 
+       (string-prefix-p (expand-file-name arrow-org-directory)
                         (or (buffer-file-name) ""))))
 
 (defun arrow-org--get-project-root ()
@@ -66,9 +68,9 @@
                     (format-time-string "%Y-%m-%d")))))
 
 (defun arrow-org--return-to-source (source &optional return-pos)
-  "Return to SOURCE file, closing the org note's window or frame.
-Mirrors how the note was opened, so same-window uses `find-file', other-window
-deletes the note window, other-frame deletes the note frame"
+  "Return to SOURCE file at RETURN-POS, closing the org note's window or frame.
+Mirrors how the note was opened, so same-window uses `find-file', `other-window'
+deletes the note window, `other-frame' deletes the note frame"
   (save-buffer)
   (pcase arrow-org-window-behavior
     ('other-frame
@@ -115,7 +117,7 @@ Always returns to the specific file you came from."
         (message "No source link found."))
     ;; GOING TO NOTE, store current position for precise return
     (let* ((root (arrow-org--get-project-root))
-           (notes-file (expand-file-name 
+           (notes-file (expand-file-name
                         (concat (file-name-nondirectory (directory-file-name root)) ".org")
                         arrow-org-directory))
            (current-pos (point)))

@@ -1,5 +1,7 @@
 ;;; arrow-project.el --- Project-level transient bookmarks -*- lexical-binding: t; -*-
 
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
 ;;; commentary:
 ;; Project specific implementation of arrow.nvim in Emacs with identical
 ;; functionality to arrow.el
@@ -13,11 +15,13 @@
   "Cache for project bookmarks to avoid constant disk IO.  Keyed by project root.")
 
 (defun arrow-project--root ()
+  "Return project root if found."
   (if-let ((proj (project-current)))
       (project-root proj)
     (user-error "Not currently in a project (via project.el)")))
 
 (defun arrow-project--file (root)
+  "Get storage file for project ROOT."
   (arrow--get-storage-path root))
 
 (defun arrow-project--load (root)
@@ -34,6 +38,7 @@
   (arrow--save-data (arrow-project--file root) alist))
 
 (defun arrow-project-add ()
+  "Add file to project list."
   (interactive)
   (unless (buffer-file-name)
     (user-error "Current buffer is not visiting a file"))
@@ -55,6 +60,7 @@
     (message "Added project bookmark '%c' for %s" char file-path)))
 
 (defun arrow-project-delete ()
+  "Delete file from project list."
   (interactive)
   (let* ((root (arrow-project--root))
          (alist (arrow-project--load root)))
@@ -91,7 +97,7 @@
 
 
 (defun arrow-project-show ()
-  "Show project bookmarks.  Support splits: C-key (horizontal), M-key (vertical)."
+  "Show project bookmarks.  Support splits: C-key (horizontal), S-key (vertical)."
   (interactive)
   (let* ((root (arrow-project--root))
          (alist (or (arrow-project--load root) nil))
@@ -126,7 +132,7 @@
 ;; --- project-wide cycling
 
 (defun arrow-project-cycle (direction)
-  "Cycle project bookmarks. DIRECTION is 1 (next) or -1 (prev)."
+  "Cycle project bookmarks.  DIRECTION is 1 (next) or -1 (prev)."
   (let* ((root (arrow-project--root))
          (alist (arrow-project--load root))
          (current-file (when (buffer-file-name)
@@ -146,8 +152,12 @@
       (find-file (expand-file-name (cdr target) root))
       (message "Project [%c]: %s" (car target) (cdr target)))))
 
-(defun arrow-project-next () (interactive) (arrow-project-cycle 1))
-(defun arrow-project-prev () (interactive) (arrow-project-cycle -1))
+(defun arrow-project-next ()
+  "Move forward in project list."
+  (interactive) (arrow-project-cycle 1))
+(defun arrow-project-prev ()
+  "Move backward in project list."
+  (interactive) (arrow-project-cycle -1))
 
 (provide 'arrow-project)
 ;;; arrow-project.el ends here
