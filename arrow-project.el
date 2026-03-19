@@ -1,5 +1,6 @@
 ;;; arrow-project.el --- Project-level transient bookmarks -*- lexical-binding: t; -*-
 
+;; Author: vmargb
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; commentary:

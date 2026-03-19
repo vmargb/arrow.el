@@ -5,7 +5,7 @@
 ;; Package-Requires: ((emacs "28.1"))
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
-; SPDX-License-Identifier: GPL-3.0-or-later
+;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;; Description: Buffer-local and project-local bookmarks with a centered transient hover window.
 
@@ -161,10 +161,10 @@
         (progn
           (setq arrow-alist (assq-delete-all char arrow-alist))
           (arrow--save-to-file)
-          (message "Deleted bookmark '%c'" char))
-      (message "No bookmark found for '%c'" char)
-      (when arrow-visual-marker
-        (arrow--refresh-indicators)))))
+          (message "Deleted bookmark '%c'" char)
+          (when arrow-visual-marker
+            (arrow--refresh-indicators)))
+      (message "No bookmark found for '%c'" char))))
 
 (defun arrow-clear-all ()
   "Clear all bookmarks fr a buffer."

@@ -1,9 +1,10 @@
 ;;; arrow-core.el --- shared helpers for arrow -*- lexical-binding: t; -*-
 
+;; Author: vmargb
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; commentary:
-;; Minimal shared core used by arrow.el and arrow-project.el
+;; Minimal shared functions used by arrow, arrow-global arrow-project
 
 (require 'subr-x)
 
