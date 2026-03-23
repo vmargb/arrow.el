@@ -88,24 +88,33 @@
 (defun arrow--display-child-frame (buf)
   "Display BUF in a centered child frame (GUI only)."
   (let* ((parent (selected-frame))
-         (lines (+ 2 (with-current-buffer buf (count-lines (point-min) (point-max)))))
-         (width-chars 75)
-         (char-width (or (frame-char-width parent) 10))
+         (char-width  (or (frame-char-width parent)  10))
          (char-height (or (frame-char-height parent) 20))
+         (width-chars 75)
          (px-width (* width-chars char-width))
+         (content-lines (with-current-buffer buf
+                          (count-lines (point-min) (point-max))))
+         ;; cap height so the popup never overflows the parent frame (bookmarks missing)
+         (max-lines (max 3 (- (/ (frame-pixel-height parent) char-height) 4)))
+         (lines (min (+ 2 content-lines) max-lines))
          (px-height (* lines char-height))
          (left (/ (- (frame-pixel-width parent) px-width) 2))
-         (top (/ (- (frame-pixel-height parent) px-height) 2))
+         ;; clamp top: never go above the parent frame's top edge
+         (top (max 0 (/ (- (frame-pixel-height parent) px-height) 2)))
          (frame (make-frame
                  `((parent-frame . ,parent) (minibuffer . nil) (undecorated . t)
-                   (internal-border-width . 3) (background-color . ,(face-background 'tooltip nil t))
-                   (width . ,width-chars) (height . ,lines) (left . ,left) (top . ,top)
+                   (internal-border-width . 3)
+                   (background-color . ,(face-background 'tooltip nil t))
+                   (width . ,width-chars) (height . ,lines)
+                   (left . ,left) (top . ,top)
                    (no-accept-focus . t)))))
     (set-window-buffer (frame-root-window frame) buf)
+    ;; explicitly scroll to top so newest entries (at buffer start) are always visible
+    (set-window-start (frame-root-window frame)
+                      (with-current-buffer buf (point-min)))
     (set-window-dedicated-p (frame-root-window frame) t)
     (make-frame-visible frame)
     (setq arrow--popup-frame frame)))
-
 
 (defvar arrow--shift-map
   '((?! . ?1) (?@ . ?2) (?# . ?3) (?$ . ?4) (?% . ?5)
@@ -138,8 +147,10 @@
                                 'face 'arrow-legend-face)))
       (setq mode-line-format nil
             cursor-type nil
+            cursor-in-non-selected-windows nil
             truncate-lines t) ; truncate line to prevent line wrapping bug
-      (insert (string-join (reverse text-lines) "\n")))
+      (insert (string-join (reverse text-lines) "\n"))
+      (goto-char (point-min)))
 
     (if (display-graphic-p)
         (arrow--display-child-frame buf)
