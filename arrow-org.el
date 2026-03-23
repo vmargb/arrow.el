@@ -1,4 +1,4 @@
-;;; arrow-org.el --- Dynamic note bookmarks for arrow -*- lexical-binding: t; -*-
+;;; arrow-org.el --- Dynamic org bookmarks for arrow -*- lexical-binding: t; -*-
 
 ;; Author: vmargb
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -6,6 +6,7 @@
 ;;; Commentary:
 ;; Project and file-specific note management with smart return navigation
 ;; every file and project is dynamically linked to its own org file
+;; used for quick note-taking and jumping back-and-forth between them
 
 ;;; Code:
 

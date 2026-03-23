@@ -1,12 +1,13 @@
-;;; arrow-global.el --- Global transient bookmarks -*- lexical-binding: t; -*-
+;;; arrow-global.el --- Global bookmarks -*- lexical-binding: t; -*-
 
 ;; Author: vmargb
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;; Cross-project global file bookmarks, follows the same patterns as
-;; arrow-project.el but keyed to absolute paths, stored in a
+;; arrow-project.el and arrow.el but keyed to absolute paths, stored in a
 ;; fixed file.  Accessible from anywhere regardless of project context
+;; Similar to M-x: bookmark-jump but adds unified workflow to arrow
 
 (require 'arrow-core)
 

@@ -4,7 +4,9 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; commentary:
-;; Minimal shared functions used by arrow, arrow-global arrow-project
+;; Minimal shared functions used by arrow, arrow-global & arrow-project
+;; such as saving and loading from storage, drawing hover frame
+;; handling keypresses etc.
 
 (require 'subr-x)
 

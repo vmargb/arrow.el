@@ -1,16 +1,17 @@
-;;; arrow.el --- File-local and Project-local transient bookmarks -*- lexical-binding: t; -*-
+;;; arrow.el --- buffer-local bookmarks -*- lexical-binding: t; -*-
 
 ;; Author: vmargb
-;; Version: 0.4.1
+;; Version: 1.0.0
 ;; Package-Requires: ((emacs "28.1"))
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
-;; Description: Buffer-local and project-local bookmarks with a centered transient hover window.
+;; Description: Buffer-local, project-local and global bookmarks with a centered floating menu
 
 ;;; commentary:
-;; An implementation of arrow.nvim in Emacs.  A harpoon-like bookmarking system using transient menu.
+;; An implementation of arrow.nvim in Emacs.  A harpoon-like bookmarking system that uses a floating menu
+;; with mnemonic keypresses to jump to marks quickly without typing with visual hints.
 
 (require 'arrow-core)
 

@@ -1,11 +1,11 @@
-;;; arrow-project.el --- Project-level transient bookmarks -*- lexical-binding: t; -*-
+;;; arrow-project.el --- Project-local bookmarks -*- lexical-binding: t; -*-
 
 ;; Author: vmargb
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; commentary:
-;; Project specific implementation of arrow.nvim in Emacs with identical
-;; functionality to arrow.el
+;; Project local implementation with identical functionality to arrow.el
+;; but for files isolated within a project/git repo
 
 (require 'project)
 (require 'arrow-core)
