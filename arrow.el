@@ -1,5 +1,6 @@
 ;;; arrow.el --- buffer-local bookmarks -*- lexical-binding: t; -*-
 
+;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
 ;; Version: 1.0.0
 ;; Package-Requires: ((emacs "28.1"))
@@ -9,13 +10,14 @@
 
 ;; Description: Buffer-local, project-local and global bookmarks with a centered floating menu
 
-;;; commentary:
+;;; Commentary:
 ;; An implementation of arrow.nvim in Emacs.  A harpoon-like bookmarking system that uses a floating menu
 ;; with mnemonic keypresses to jump to marks quickly without typing with visual hints.
 
+;;; Code:
+
 (require 'arrow-core)
 
-;;; Code:
 
 (defgroup arrow nil
   "File-local bookmarks with transient popups."

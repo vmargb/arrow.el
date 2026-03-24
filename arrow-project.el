@@ -3,7 +3,7 @@
 ;; Author: vmargb
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
-;;; commentary:
+;;; Commentary:
 ;; Project local implementation with identical functionality to arrow.el
 ;; but for files isolated within a project/git repo
 
