@@ -8,8 +8,6 @@
 ;; Keywords: convenience, navigation, bookmarks
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
-;; Description: Buffer-local, project-local and global bookmarks with a centered floating menu
-
 ;;; Commentary:
 ;; An implementation of arrow.nvim in Emacs.  A harpoon-like bookmarking system that uses a floating menu
 ;; with mnemonic keypresses to jump to marks quickly without typing with visual hints.
