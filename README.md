@@ -51,7 +51,6 @@ The Org layer extends Arrow further by dynamically linking your code to living d
 (use-package arrow
   :vc (:fetcher "github" :repo "vmargb/arrow.el")
   :config
-  (require 'arrow-org) ; optional org bookmarks
   (setq arrow-org-directory "~/org/arrow-notes/"))
 ```
 
@@ -60,7 +59,6 @@ The Org layer extends Arrow further by dynamically linking your code to living d
 (use-package arrow
   :straight (arrow :type git :host github :repo "vmargb/arrow.el")
   :config
-  (require 'arrow-org) ; optional org bookmarks
   (setq arrow-org-directory "~/org/arrow-notes/"))
 ```
 
@@ -71,7 +69,6 @@ Ensure you have `(elpaca-use-package-mode)`
 (use-package arrow
   :elpaca (arrow :host github :repo "vmargb/arrow.el")
   :config
-  (require 'arrow-org) ; optional org bookmarks
   (setq arrow-org-directory "~/org/arrow-notes/"))
 ```
 
@@ -153,48 +150,39 @@ If the above commands are too overwhelming `arrow-jump` has you covered.
 ```
 
 **General keybinds:**
+These are my keybindings, feel free to copy them.
 ```elisp
+;; Marks (arrow.el)
 "m"  '(:ignore t :which-key "marks")
-
-;; arrow-local
-"mb" '(:ignore t :which-key "buffer")
-"mba" '(arrow-add          :which-key "add")
-"mbs" '(arrow-show         :which-key "show")
-"mbd" '(arrow-delete       :which-key "delete")
-"mbc" '(arrow-clear-all    :which-key "clear all")
-"mbn" '(arrow-next-line    :which-key "next")
-"mbp" '(arrow-prev-line    :which-key "prev")
-"mbj" '(arrow-jump-buffer  :which-key "jump")
-
-;; arrow-project
-"mp" '(:ignore t :which-key "project")
-"mpa" '(arrow-project-add    :which-key "add")
-"mps" '(arrow-project-show   :which-key "show")
-"mpd" '(arrow-project-delete :which-key "delete")
-"mpn" '(arrow-project-next   :which-key "next")
-"mpp" '(arrow-project-prev   :which-key "prev")
-"mpj" '(arrow-jump-project   :which-key "jump")
-
-;; arrow-global
-"mg" '(:ignore t :which-key "global")
-"mga" '(arrow-global-add    :which-key "add")
-"mgs" '(arrow-global-show   :which-key "show")
-"mgd" '(arrow-global-delete :which-key "delete")
-"mgc" '(arrow-global-clear-all :which-key "clear all")
-"mgn" '(arrow-global-next   :which-key "next")
-"mgp" '(arrow-global-prev   :which-key "prev")
-"mgj" '(arrow-jump-global   :which-key "jump")
-
+"mm" '(arrow-show         :which-key "show")
+"ma" '(arrow-add          :which-key "add")
+"md" '(arrow-delete       :which-key "delete")
+"mc" '(arrow-clear-all    :which-key "clear all")
+"mn" '(arrow-next-line    :which-key "next")
+"mp" '(arrow-prev-line    :which-key "prev")
+;; Project layer
+"k"  '(:ignore t :which-key "project marks")
+"kk" '(arrow-project-show   :which-key "show")
+"ka" '(arrow-project-add    :which-key "add")
+"kd" '(arrow-project-delete :which-key "delete")
+"kn" '(arrow-project-next   :which-key "next")
+"kp" '(arrow-project-prev   :which-key "prev")
+;; Global layer
+"i" '(:ignore t :which-key "global")
+"ia" '(arrow-global-add    :which-key "add")
+"ii" '(arrow-global-show   :which-key "show")
+"id" '(arrow-global-delete :which-key "delete")
+"ic" '(arrow-global-clear-all :which-key "clear all")
+"in" '(arrow-global-next   :which-key "next")
+"ip" '(arrow-global-prev   :which-key "prev")
 ;; Unified
 "mj" '(arrow-jump :which-key "jump (auto)")
-
-;; arrow-org
+;; Arrow-Org
+"oo" '(arrow-org-list-project-notes :which-key "org list notes")
 "of" '(arrow-org-open-file          :which-key "org for this file")
 "op" '(arrow-org-open-project       :which-key "org for this project")
-"os" '(arrow-org-list-project-notes :which-key "org list notes")
 ```
 
 ## Todo
 
-- arrow-jump repeat style feature to allow fast cycling without repetition
 - Unified hydra-like menu that shows buffer-local + project bookmarks together
