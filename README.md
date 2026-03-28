@@ -80,10 +80,22 @@ Ensure you have `(elpaca-use-package-mode)`
 (setq arrow-auto-promote nil) ;; auto rearranges list when key added or used
 (setq arrow-visual-marker t) ;; displays visual marker on line number
 (setq arrow-visual-marker-position 'left) ;; marker position(left or right)
+(setq arrow-project-modeline nil) ;; show modeline indicaor for arrow-project
 
 ;; Org layer settings
 (setq arrow-org-window-behavior 'same-window) ;; 'same-window, 'other-window, 'other-frame
 ```
+
+#### Doom-Modeline integration
+Add this to your `init.el` after loading both doom-modeline & arrow:
+
+```elisp
+(with-eval-after-load 'doom-modeline
+  (doom-modeline-def-segment arrow-project
+    (arrow-project-modeline-string))
+  (doom-modeline-add-segment 'arrow-project 'misc-info :after 'main))
+```
+ensure you have `(setq arrow-project-modeline t)` for this to work
 
 ## Commands
 

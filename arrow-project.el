@@ -165,5 +165,25 @@
   "Move backward in project list."
   (interactive) (arrow-project-cycle -1))
 
+;; modeline-string
+
+(defun arrow-project--current-key ()
+  "Return the project bookmark key for the current buffer, or nil if none."
+  (when-let* ((file (buffer-file-name))
+              (proj (project-current))
+              (root (project-root proj))
+              (alist (arrow-project--load root))
+              (rel-path (file-relative-name file root))
+              ;; rassoc looks up the alist by the value (file path) using `equal`
+              (entry (rassoc rel-path alist)))
+    (car entry)))
+
+(defun arrow-project-modeline-string ()
+  "Generate the modeline string for the current project bookmark."
+  (when (and arrow-project-modeline (arrow-project--current-key))
+    (let ((key (arrow-project--current-key)))
+      (propertize (format " %s[%c] " arrow-project-modeline-glyph key)
+                  'face 'arrow-bookmark-face))))
+
 (provide 'arrow-project)
 ;;; arrow-project.el ends here

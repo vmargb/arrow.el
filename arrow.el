@@ -9,8 +9,9 @@
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
-;; An implementation of arrow.nvim in Emacs.  A harpoon-like bookmarking system that uses a floating menu
-;; with mnemonic keypresses to jump to marks quickly without typing with visual hints.
+;; An implementation of arrow.nvim in Emacs.  A harpoon-like bookmarking system that
+;; uses a floating menu with mnemonic keypresses to jump to marks quickly without
+;; typing with visual hints.
 
 ;;; Code:
 
@@ -21,6 +22,8 @@
   "File-local bookmarks with transient popups."
   :group 'convenience)
 
+
+;; custom options:
 
 (defcustom arrow-persist t
   "If non-nil, save bookmarks to a storage file automatically."
@@ -46,6 +49,17 @@
 
 (defvar-local arrow-alist nil
   "Alist of file-scoped bookmarks.  Format: ((char . marker) ...).")
+
+(defcustom arrow-project-modeline nil
+  "If non-nil, display the project bookmark key in the modeline."
+  :type 'boolean
+  :group 'arrow)
+
+(defcustom arrow-project-modeline-glyph "➶ "
+  "Glyph used for the modeline indicator.
+icons like '󱋱 ', '󰁕 ', or simply '➶ '."
+  :type 'string
+  :group 'arrow)
 
 
 ;; Visual overlay
@@ -297,6 +311,14 @@ Supports splits: C-key (horizontal), M-key (vertical)."
   (make-sparse-keymap)
   "Keymap for `arrow-mode'.")
 
+(defvar arrow-modeline-segment
+  '(:eval (arrow-project-modeline-string))
+  "The modeline segment for arrow.el.")
+
+;; add to global-mode-string so it shows up in
+;; standard Emacs and Doom Modeline (via the misc-info segment).
+(add-to-list 'global-mode-string '("" arrow-modeline-segment) t)
+
 ;;;###autoload
 (define-minor-mode arrow-mode
   "Minor mode for file-local transient bookmarks."
@@ -320,14 +342,6 @@ Supports splits: C-key (horizontal), M-key (vertical)."
     (setq right-margin-width 0)
     (set-window-buffer nil (current-buffer))
     (arrow--clear-indicators)))
-
-(defun arrow--maybe-load ()
-  "Load storage if it exists, otherwise continue as normal."
-  (let ((file (arrow--storage-file)))
-    (when (and file (file-exists-p file))
-      (unless arrow-mode (arrow-mode 1)))))
-
-(add-hook 'find-file-hook #'arrow--maybe-load) ; change this, should rarely use add-hook
 
 (require 'arrow-global)
 (require 'arrow-project)
