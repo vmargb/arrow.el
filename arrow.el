@@ -343,6 +343,14 @@ Supports splits: C-key (horizontal), M-key (vertical)."
     (set-window-buffer nil (current-buffer))
     (arrow--clear-indicators)))
 
+(defun arrow--maybe-load ()
+  "Load storage if it exists, otherwise continue as normal."
+  (let ((file (arrow--storage-file)))
+    (when (and file (file-exists-p file))
+      (unless arrow-mode (arrow-mode 1)))))
+
+(add-hook 'find-file-hook #'arrow--maybe-load)
+
 (require 'arrow-global)
 (require 'arrow-project)
 (require 'arrow-org)
