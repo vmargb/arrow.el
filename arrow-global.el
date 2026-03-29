@@ -14,8 +14,6 @@
 ;; fixed file.  Accessible from anywhere regardless of project context
 ;; Similar to M-x: bookmark-jump but adds unified workflow to arrow
 
-(require 'arrow-core)
-
 ;;; Code:
 
 (defgroup arrow-global nil

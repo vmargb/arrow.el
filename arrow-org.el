@@ -15,9 +15,6 @@
 
 ;;; Code:
 
-(require 'project)
-(require 'arrow-core)
-
 (defgroup arrow-org nil
   "Note-taking integration for arrow."
   :group 'arrow)
@@ -150,7 +147,7 @@ Maintains separate note files per source file."
            ;; sanitize path for filesystem safety
            (safe-relpath (replace-regexp-in-string "[\\/]" "-" relpath))
            (note-path (expand-file-name
-                       (concat (file-name-nondirectory (directory-file-name root)) 
+                       (concat (file-name-nondirectory (directory-file-name root))
                                "/" safe-relpath ".notes.org")
                        arrow-org-directory)))
       (arrow-org--open-and-setup note-path (buffer-file-name)))))
@@ -172,11 +169,6 @@ Maintains separate note files per source file."
     (if files
         (find-file (completing-read "Project note: " files nil t))
       (message "No notes found for this project"))))
-
-;;; legacy aliases for backward compatibility
-
-(defalias 'arrow-notes-open-project 'arrow-org-open-project)
-(defalias 'arrow-notes-open-file 'arrow-org-open-file)
 
 (provide 'arrow-org)
 

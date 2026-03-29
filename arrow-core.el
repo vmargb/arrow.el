@@ -1,4 +1,4 @@
-;;; arrow-core.el --- shared helpers for arrow -*- lexical-binding: t; -*-
+;;; arrow-core.el --- Shared helpers for arrow -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
@@ -12,8 +12,6 @@
 ;; Minimal shared functions used by arrow, arrow-global & arrow-project
 ;; such as saving and loading from storage, drawing hover frame
 ;; handling keypresses etc.
-
-(require 'subr-x)
 
 ;;; Code:
 
@@ -136,7 +134,8 @@
   :group 'arrow-core)
 
 (defun arrow--show-popup (title alist format-fn)
-  "Generic transient popup.  Return (SELECTION . MODIFIERS) or nil."
+  "Generic popup with associated TITLE & ALIST & FORMAT-FN.
+Return (SELECTION . MODIFIERS) or nil."
   (unless alist (user-error "No bookmarks to display"))
   (let ((buf (get-buffer-create " *arrow-popup*"))
         (text-lines '())

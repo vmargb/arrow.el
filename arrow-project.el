@@ -12,9 +12,6 @@
 ;; Project local implementation with identical functionality to arrow.el
 ;; but for files isolated within a project/git repo
 
-(require 'project)
-(require 'arrow-core)
-
 ;;; Code:
 
 (defvar arrow-project-cache (make-hash-table :test 'equal)

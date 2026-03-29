@@ -1,4 +1,4 @@
-;;; arrow.el --- buffer-local bookmarks -*- lexical-binding: t; -*-
+;;; arrow.el --- Buffer-local bookmarks -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
@@ -15,6 +15,7 @@
 
 ;;; Code:
 
+(require 'subr-x)
 (require 'arrow-core)
 
 
