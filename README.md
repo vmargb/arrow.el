@@ -39,7 +39,9 @@ Arrow introduces four layers of bookmarks to help you stay organized:
 arrow.el provides seamless navigation across all layers with a unified interface. Unlike Emacs registers or Vim/Evil marks, these are properly isolated per layer and immune to clipboard pollution (yanks/deletes won't litter your bookmarks). QOL features include visual fringe markers, a floating hover menu, and at most two keybinds to jump to any bookmark.
 
 ### Org integration
-The Org layer extends Arrow further by dynamically linking your code to living documentation. Each project automatically gets its own Org file, allowing every source file to connect back to it. Additionally, every file in a project has its own unique org note.
+The Org layer extends Arrow further by dynamically linking your project to private documentation(outside of the repo). Each project has a bookmark to its own Org file, allowing every source file in the project to connect back to it. Additionally, every file in the project also has its own distinct org file.
+
+This is not an alternative to org-capture: The typical org-capture flow doesn’t provide a natural reading/review experience for reconnecting with complex codebases after months away. Arrow makes documentation first-class and directly reachable from code, instead of scattering quick snippets into a global capture inbox that may never be revisited.
 
 ---
 
@@ -165,34 +167,35 @@ If the above commands are too overwhelming `arrow-jump` has you covered.
 These are my keybindings, feel free to copy them.
 ```elisp
 ;; Marks (arrow.el)
-"m"  '(:ignore t :which-key "marks")
-"mm" '(arrow-show         :which-key "show")
-"ma" '(arrow-add          :which-key "add")
-"md" '(arrow-delete       :which-key "delete")
-"mc" '(arrow-clear-all    :which-key "clear all")
-"mn" '(arrow-next-line    :which-key "next")
-"mp" '(arrow-prev-line    :which-key "prev")
+;; Buffer (arrow.el)
+","  '(:ignore t :which-key "marks")
+",," '(arrow-show :which-key "show")
+",a" '(arrow-add          :which-key "add")
+",d" '(arrow-delete       :which-key "delete")
+",c" '(arrow-clear-all    :which-key "clear all")
+",n" '(arrow-next-line    :which-key "next")
+",p" '(arrow-prev-line    :which-key "prev")
 ;; Project layer
-"k"  '(:ignore t :which-key "project marks")
-"kk" '(arrow-project-show   :which-key "show")
-"ka" '(arrow-project-add    :which-key "add")
-"kd" '(arrow-project-delete :which-key "delete")
-"kn" '(arrow-project-next   :which-key "next")
-"kp" '(arrow-project-prev   :which-key "prev")
+"."  '(:ignore t :which-key "project marks")
+".." '(arrow-project-show    :which-key "show")
+".a" '(arrow-project-add    :which-key "add")
+".d" '(arrow-project-delete :which-key "delete")
+".n" '(arrow-project-next   :which-key "next")
+".p" '(arrow-project-prev   :which-key "prev")
 ;; Global layer
-"i" '(:ignore t :which-key "global")
-"ia" '(arrow-global-add    :which-key "add")
-"ii" '(arrow-global-show   :which-key "show")
-"id" '(arrow-global-delete :which-key "delete")
-"ic" '(arrow-global-clear-all :which-key "clear all")
-"in" '(arrow-global-next   :which-key "next")
-"ip" '(arrow-global-prev   :which-key "prev")
-;; Unified
-"mj" '(arrow-jump :which-key "jump (auto)")
-;; Arrow-Org
+"/" '(:ignore t :which-key "global")
+"//" '(arrow-global-show    :which-key "sow")
+"/a" '(arrow-global-add    :which-key "add")
+"/d" '(arrow-global-delete :which-key "delete")
+"/c" '(arrow-global-clear-all :which-key "clear all")
+"/n" '(arrow-global-next   :which-key "next")
+"/p" '(arrow-global-prev   :which-key "prev")
+;; arrow-Org
 "oo" '(arrow-org-list-project-notes :which-key "org list notes")
 "of" '(arrow-org-open-file          :which-key "org for this file")
 "op" '(arrow-org-open-project       :which-key "org for this project")
+;; Unified
+";" '(arrow-jump :which-key "arrow global")
 ```
 
 ## Todo

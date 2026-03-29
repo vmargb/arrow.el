@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
-;; Version: 1.0.0
+;; Version: 1.0.1
 ;; Package-Requires: ((emacs "28.1"))
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
@@ -236,7 +236,7 @@ Supports splits: C-key (horizontal), M-key (vertical)."
   (interactive)
   (when-let* ((result
                (arrow--show-popup
-                "Bookmarks" arrow-alist
+                "Buffer" arrow-alist
                 (lambda (char marker)
                   (let* ((line (if (marker-buffer marker)
                                    (line-number-at-pos marker)

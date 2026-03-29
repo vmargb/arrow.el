@@ -117,7 +117,7 @@ Supports splits: C-key (horizontal split), S-key (vertical split)."
   (let ((alist (arrow-global--load)))
     (when-let* ((result
                  (arrow--show-popup
-                  "Global Bookmarks"
+                  "Global"
                   alist
                   (lambda (char path)
                     (let* ((exists (file-exists-p path))
