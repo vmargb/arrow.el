@@ -2,8 +2,7 @@
 
 ;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
-;; Version: 1.0.0
-;; Package-Requires: ((emacs "28.1"))
+;; Version: 1.0.1
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -123,7 +122,7 @@
 
 (defvar arrow--shift-map
   '((?! . ?1) (?@ . ?2) (?# . ?3) (?$ . ?4) (?% . ?5)
-    (?^ . ?6) (?& . ?7) (?* . ?8) (?( . ?9) (?) . ?0)
+    (?^ . ?6) (?& . ?7) (?* . ?8) (?\( . ?9) (?\) . ?0)
     (?_ . ?-) (?+ . ?=) (?{ . ?\[) (?} . ?\]) (?| . ?\\)
     (?: . ?\;) (?\" . ?') (?< . ?,) (?> . ?.) (?? . ?/))
   "Mapping of shifted symbols to their base keys.")

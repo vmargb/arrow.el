@@ -2,8 +2,7 @@
 
 ;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
-;; Version: 1.0.0
-;; Package-Requires: ((emacs "28.1"))
+;; Version: 1.0.1
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -15,6 +14,8 @@
 ;; Similar to M-x: bookmark-jump but adds unified workflow to arrow
 
 ;;; Code:
+
+(require 'arrow-core)
 
 (defgroup arrow-global nil
   "Global (cross-project) bookmarks for arrow."

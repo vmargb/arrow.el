@@ -41,7 +41,7 @@ arrow.el provides seamless navigation across all layers with a unified interface
 ### Org integration
 The Org layer extends Arrow further by dynamically linking your project to private documentation(outside of the repo). Each project has a bookmark to its own Org file, allowing every source file in the project to connect back to it. Additionally, every file in the project also has its own distinct org file.
 
-This is not an alternative to org-capture: The typical org-capture flow doesn’t provide a natural reading/review experience for reconnecting with complex codebases after months away. Arrow makes documentation first-class and directly reachable from code, instead of scattering quick snippets into a global capture inbox that may never be revisited.
+This is not an alternative to `org-capture`: The typical org-capture flow doesn’t provide a natural reading/review experience for reconnecting with complex codebases after months away. Arrow makes documentation first-class and directly reachable from code, instead of scattering quick snippets into a global capture inbox that may never be revisited.
 
 ---
 
@@ -166,18 +166,19 @@ If the above commands are too overwhelming `arrow-jump` has you covered.
 **General keybinds:**
 These are my keybindings, feel free to copy them.
 ```elisp
-;; Marks (arrow.el)
 ;; Buffer (arrow.el)
 ","  '(:ignore t :which-key "marks")
 ",," '(arrow-show :which-key "show")
 ",a" '(arrow-add          :which-key "add")
+",j" '(arrow-jump-buffer  :which-key "add")
 ",d" '(arrow-delete       :which-key "delete")
 ",c" '(arrow-clear-all    :which-key "clear all")
 ",n" '(arrow-next-line    :which-key "next")
 ",p" '(arrow-prev-line    :which-key "prev")
 ;; Project layer
 "."  '(:ignore t :which-key "project marks")
-".." '(arrow-project-show    :which-key "show")
+".." '(arrow-project-show   :which-key "show")
+".j" '(arrow-jump-project   :which-key "show")
 ".a" '(arrow-project-add    :which-key "add")
 ".d" '(arrow-project-delete :which-key "delete")
 ".n" '(arrow-project-next   :which-key "next")
@@ -186,6 +187,7 @@ These are my keybindings, feel free to copy them.
 "/" '(:ignore t :which-key "global")
 "//" '(arrow-global-show    :which-key "sow")
 "/a" '(arrow-global-add    :which-key "add")
+"/j" '(arrow-jump-global    :which-key "add")
 "/d" '(arrow-global-delete :which-key "delete")
 "/c" '(arrow-global-clear-all :which-key "clear all")
 "/n" '(arrow-global-next   :which-key "next")

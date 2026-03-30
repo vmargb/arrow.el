@@ -2,8 +2,7 @@
 
 ;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
-;; Version: 1.0.0
-;; Package-Requires: ((emacs "28.1"))
+;; Version: 1.0.1
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -14,6 +13,11 @@
 ;; used for quick note-taking and jumping back-and-forth between them
 
 ;;; Code:
+
+(require 'project)
+
+(declare-function org-set-property "org" (property value))
+(declare-function org-entry-get "org" (pom property &optional inherit literal-nil))
 
 (defgroup arrow-org nil
   "Note-taking integration for arrow."
@@ -70,7 +74,7 @@
   (when (= (point-min) (point-max))
     (insert (format "#+TITLE: Notes for %s\n#+DATE: %s\n\n* Overview\n\n"
                     (file-name-base note-path)
-                    (format-time-string "%Y-%m-%d")))))
+                    (format-time-string "%F")))))
 
 (defun arrow-org--return-to-source (source &optional return-pos)
   "Return to SOURCE file at RETURN-POS, closing the org note's window or frame.

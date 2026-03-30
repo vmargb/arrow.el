@@ -350,7 +350,16 @@ Supports splits: C-key (horizontal), M-key (vertical)."
     (when (and file (file-exists-p file))
       (unless arrow-mode (arrow-mode 1)))))
 
-(add-hook 'find-file-hook #'arrow--maybe-load)
+;;;###autoload
+(define-minor-mode arrow-auto-mode
+  "Global minor mode that auto-enables `arrow-mode' in bookmarked files.
+Watches `find-file-hook' and activates `arrow-mode' whenever a file
+has stored Arrow bookmarks on disk."
+  :global t
+  :group 'arrow
+  (if arrow-auto-mode
+      (add-hook 'find-file-hook #'arrow--maybe-load)
+    (remove-hook 'find-file-hook #'arrow--maybe-load)))
 
 (require 'arrow-global)
 (require 'arrow-project)

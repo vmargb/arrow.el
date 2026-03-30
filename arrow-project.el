@@ -2,8 +2,7 @@
 
 ;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
-;; Version: 1.0.0
-;; Package-Requires: ((emacs "28.1"))
+;; Version: 1.0.1
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -13,6 +12,14 @@
 ;; but for files isolated within a project/git repo
 
 ;;; Code:
+
+(require 'arrow-core)
+(require 'project)
+
+;; forward declarations
+(defvar arrow-auto-promote)
+(defvar arrow-project-modeline)
+(defvar arrow-project-modeline-glyph)
 
 (defvar arrow-project-cache (make-hash-table :test 'equal)
   "Cache for project bookmarks to avoid constant disk IO.  Keyed by project root.")
