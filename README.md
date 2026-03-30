@@ -53,6 +53,7 @@ This is not an alternative to `org-capture`: The typical org-capture flow doesnâ
 (use-package arrow
   :vc (:fetcher "github" :repo "vmargb/arrow.el")
   :config
+  (arrow-auto-mode)
   (setq arrow-org-directory "~/org/arrow-notes/"))
 ```
 
@@ -61,6 +62,7 @@ This is not an alternative to `org-capture`: The typical org-capture flow doesnâ
 (use-package arrow
   :straight (arrow :type git :host github :repo "vmargb/arrow.el")
   :config
+  (arrow-auto-mode)
   (setq arrow-org-directory "~/org/arrow-notes/"))
 ```
 
@@ -71,6 +73,7 @@ Ensure you have `(elpaca-use-package-mode)`
 (use-package arrow
   :elpaca (arrow :host github :repo "vmargb/arrow.el")
   :config
+  (arrow-auto-mode)
   (setq arrow-org-directory "~/org/arrow-notes/"))
 ```
 
