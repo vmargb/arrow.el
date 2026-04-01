@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
-;; Version: 1.0.1
+;; Version: 1.0.2
 ;; Package-Requires: ((emacs "28.1"))
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
@@ -60,6 +60,12 @@
   "Glyph used for the modeline indicator.
 icons like '󱋱 ', '󰁕 ', or simply '➶ '."
   :type 'string
+  :group 'arrow)
+
+(defcustom arrow-preview-context 0
+  "Number of context lines shown above and below each bookmark in the popup.
+Set to 0 (default) for the classic single-line preview."
+  :type 'natnum
   :group 'arrow)
 
 
@@ -230,35 +236,80 @@ icons like '󱋱 ', '󰁕 ', or simply '➶ '."
 
 ;;; Display and Jump Logic
 
+(defun arrow--get-context-line (n)
+  "Return trimmed text of line N relative to point (0 = current line).
+Clamps to buffer boundaries and returns an empty string for out-of-range."
+  (save-excursion
+    (forward-line n)
+    (string-trim
+     (buffer-substring (line-beginning-position) (line-end-position)))))
+
+(defun arrow--format-bookmark-entry (char marker)
+  "Format a single bookmark entry for the popup.
+When `arrow-preview-context' is 0 the classic one-liner is returned.
+When it is N > 0, a multi-line block of (header + N before + bookmark
+line + N after + blank separator) is returned so nearby code is visible."
+  (if (not (marker-buffer marker))
+      (format " [%s] <dead marker>"
+              (propertize (char-to-string char) 'face 'arrow-key-face))
+    (let* ((ctx arrow-preview-context)
+           (line (line-number-at-pos marker)))
+      (if (zerop ctx)
+          ;; classic single-line format
+          (let* ((raw (with-current-buffer (marker-buffer marker)
+                        (save-excursion
+                          (goto-char marker)
+                          (buffer-substring (line-beginning-position)
+                                            (line-end-position)))))
+                 (preview (truncate-string-to-width (string-trim raw) 55 0 nil "…")))
+            (format " [%s] Line %-4s %s"
+                    (propertize (char-to-string char) 'face 'arrow-key-face)
+                    line preview))
+
+        ;; or context multi-line format
+        (with-current-buffer (marker-buffer marker)
+          (save-excursion
+            (goto-char marker)
+            (let* ((key-str (propertize (char-to-string char) 'face 'arrow-key-face))
+                   (header  (format " [%s] Line %d" key-str line))
+                   ;; lines before the bookmark
+                   (before  (let (acc)
+                               (dotimes (i ctx)
+                                 (let* ((offset (- (- ctx i)))  ; -(ctx-1) … -1
+                                        (txt    (arrow--get-context-line offset))
+                                        (trunc  (truncate-string-to-width txt 62 0 nil "…")))
+                                   (push (concat "      " trunc) acc)))
+                               (nreverse acc)))                  ; display order: oldest first
+                   ;; the bookmarked line itself
+                   (bm-txt  (arrow--get-context-line 0))
+                   (bm-line (concat "   ▶ "
+                                    (propertize
+                                     (truncate-string-to-width bm-txt 62 0 nil "…")
+                                     'face 'bold)))
+                   ;; lines after the bookmark
+                   (after   (let (acc)
+                               (dotimes (i ctx)
+                                 (let* ((offset (1+ i))
+                                        (txt    (arrow--get-context-line offset))
+                                        (trunc  (truncate-string-to-width txt 62 0 nil "…")))
+                                   (push (concat "      " trunc) acc)))
+                               (nreverse acc)))
+                   ;; assemble; trailing blank line acts as entry separator
+                   (parts   (append (list header) before (list bm-line) after (list ""))))
+              (string-join parts "\n"))))))))
+
 (defun arrow-show ()
   "Display file bookmarks in a popup and jump via single keypress.
-Supports splits: C-key (horizontal), M-key (vertical)."
+Supports splits: C-key (horizontal), S-key (vertical).
+The amount of context shown per entry is controlled by
+`arrow-preview-context' (0 = classic single line)."
   (interactive)
   (when-let* ((result
                (arrow--show-popup
-                "Buffer" arrow-alist
-                (lambda (char marker)
-                  (let* ((line (if (marker-buffer marker)
-                                   (line-number-at-pos marker)
-                                 "?"))
-                         (raw-preview (if (marker-buffer marker)
-                                          (with-current-buffer (marker-buffer marker)
-                                            (save-excursion
-                                              (goto-char marker)
-                                              (buffer-substring
-                                               (line-beginning-position)
-                                               (line-end-position))))
-                                        "<dead marker>"))
-                         ;; Truncate the string so it fits nicely in the 75-char frame
-                         (preview (truncate-string-to-width (string-trim raw-preview) 55 0 nil "…")))
-                    (format " [%s] Line %-4s %s"
-                            (propertize (char-to-string char)
-                                        'face 'arrow-key-face)
-                            line
-                            preview))))))
-    (let* ((selection (car result))
-           (mods (cdr result))
-           (key (car selection))
+                "Buffer" arrow-alist #'arrow--format-bookmark-entry)))
+    (let* ((selection   (car result))
+           (mods        (cdr result))
+           (key         (car selection))
            (jump-marker (cdr selection)))
 
       (when arrow-auto-promote

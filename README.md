@@ -82,6 +82,7 @@ Ensure you have `(elpaca-use-package-mode)`
 
 ```elisp
 (setq arrow-persist t) ;; persists bookmark on disk
+(setq arrow-preview-context 0) ;; 0 lines above & below, 1 line above & below etc...
 (setq arrow-auto-promote nil) ;; auto rearranges list when key added or used
 (setq arrow-visual-marker t) ;; displays visual marker on line number
 (setq arrow-visual-marker-position 'left) ;; marker position(left or right)
