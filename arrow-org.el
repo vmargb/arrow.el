@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
-;; Version: 1.0.1
+;; Version: 1.0.2
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -33,6 +33,11 @@
   :type '(choice (const :tag "Same window" same-window)
                  (const :tag "Other window" other-window)
                  (const :tag "Other frame" other-frame))
+  :group 'arrow-org)
+
+(defcustom arrow-org-function-heading-level 2
+  "Org heading level used when creating per-function headings."
+  :type 'natnum
   :group 'arrow-org)
 
 ;;; helpers
@@ -132,8 +137,11 @@ Always returns to the specific file you came from."
            (current-pos (point)))
       ;; store position in a buffer-local variable or property
       (arrow-org--open-and-setup notes-file (buffer-file-name))
-      ;; store return position in the source file property for later
-      (org-set-property "ARROW_POS" (number-to-string current-pos)))))
+      ;; Anchor to point-min so ARROW_POS lands at the document level,
+      ;; the same place ARROW_SOURCE is written and org-entry-get reads from.
+      (save-excursion
+        (goto-char (point-min))
+        (org-set-property "ARROW_POS" (number-to-string current-pos))))))
 
 (defun arrow-org-open-file ()
   "Toggle between file-specific notes and the source file.
@@ -155,6 +163,47 @@ Maintains separate note files per source file."
                                "/" safe-relpath ".notes.org")
                        arrow-org-directory)))
       (arrow-org--open-and-setup note-path (buffer-file-name)))))
+
+(defun arrow-org-open-function ()
+  "Open or jump to an Org heading for the function at point.
+Uses the same per-file note as `arrow-org-open-file'.  If the note
+already contains a heading for the current function it jumps straight
+to it, otherwise a new heading is created at the end of the file."
+  (interactive)
+  (when (arrow-org--is-note-buffer-p)
+    (user-error "arrow-org-open-function is for source files only"))
+  (unless (buffer-file-name) (user-error "Buffer has no file"))
+  (let* ((fn-name (or (add-log-current-defun) ; get current function (built-in)
+                      (user-error "No function found at point")))
+         (source-file (buffer-file-name))
+         (source-pos  (point))
+         (root        (arrow-org--get-project-root))
+         (relpath     (file-relative-name source-file root))
+         (safe-name   (replace-regexp-in-string "[\\/]" "-" relpath))
+         (note-path   (expand-file-name
+                       (concat (file-name-nondirectory (directory-file-name root))
+                               "/" safe-name ".notes.org")
+                       arrow-org-directory)))
+    ;; open / create the note file (stores ARROW_SOURCE automatically)
+    (arrow-org--open-and-setup note-path source-file)
+    ;; also store exact cursor position so return lands precisely
+    (org-set-property "ARROW_POS" (number-to-string source-pos))
+    ;; search for existing heading or create a new one
+    (let* ((level   (max 1 arrow-org-function-heading-level))
+           (stars   (make-string level ?*))
+           (heading-re (format "^%s[ \t]+%s[ \t]*$"
+                               (regexp-quote stars)
+                               (regexp-quote fn-name))))
+      (goto-char (point-min))
+      (if (re-search-forward heading-re nil t)
+          (progn
+            (beginning-of-line)
+            (message "arrow-org: jumped to '%s'" fn-name))
+        (goto-char (point-max))
+        (unless (bolp) (insert "\n"))
+        (insert (format "\n%s %s\n\n" stars fn-name))
+        (forward-line -1)
+        (message "arrow-org: created heading for '%s'" fn-name)))))
 
 (defun arrow-org-list-project-notes ()
   "List all project notes with completion."
