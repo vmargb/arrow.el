@@ -81,9 +81,9 @@ Ensure you have `(elpaca-use-package-mode)`
 ### Configuration (defaults)
 
 ```elisp
-(setq arrow-persist t) ;; persists bookmark on disk
 (setq arrow-preview-context 0) ;; 0 lines above & below, 1 line above & below etc...
 (setq arrow-auto-promote nil) ;; auto rearranges list when key added or used
+(setq arrow-auto-sort nil)    ;; auto sort bookmarks by line number on add
 (setq arrow-visual-marker t) ;; displays visual marker on line number
 (setq arrow-visual-marker-position 'left) ;; marker position(left or right)
 (setq arrow-project-modeline nil) ;; show modeline indicaor for arrow-project
@@ -115,6 +115,8 @@ ensure you have `(setq arrow-project-modeline t)` for this to work
 | `arrow-clear-all`        | Delete all buffer bookmarks               |
 | `arrow-promote-bookmark` | Move bookmark to top of list              |
 | `arrow-next-line` / `arrow-prev-line` | Cycle bookmarks                       |
+| `arrow-reorder`          | Interactively reorder buffer bookmarks    |
+| `arrow-sort-bookmarks`   | Sort buffer bookmarks by line number (one-shot) |
 
 ### Project bookmarks (files)
 | Command                                     | Description                           |
@@ -123,6 +125,7 @@ ensure you have `(setq arrow-project-modeline t)` for this to work
 | `arrow-project-show`                        | Show project bookmark menu            |
 | `arrow-project-delete`                      | Remove project bookmark               |
 | `arrow-project-next` / `arrow-project-prev` | Cycle bookmarks                       |
+| `arrow-project-reorder`                     | Interactively reorder project bookmarks |
 
 ### Org bookmarks
 | Command                        | Description                              |
@@ -152,6 +155,7 @@ If the above commands are too overwhelming `arrow-jump` has you covered.
 (define-key arrow-mode-map (kbd "C-c b j") #'arrow-jump-buffer) ;; jump to line (no UI)
 (define-key arrow-mode-map (kbd "C-c b n") #'arrow-next-line) ;; next line
 (define-key arrow-mode-map (kbd "C-c b p") #'arrow-prev-line) ;; previous line
+(define-key arrow-mode-map (kbd "C-c b r") #'arrow-reorder) ;; reorder bookmarks
 
 ;; Project
 (define-key arrow-mode-map (kbd "C-c p a") #'arrow-project-add) ;; add project file mark
@@ -160,6 +164,7 @@ If the above commands are too overwhelming `arrow-jump` has you covered.
 (define-key arrow-mode-map (kbd "C-c p j") #'arrow-jump-project) ;; jump to file (no UI)
 (define-key arrow-mode-map (kbd "C-c p n") #'arrow-project-next) ;; next file
 (define-key arrow-mode-map (kbd "C-c p p") #'arrow-project-prev) ;; previous file
+(define-key arrow-mode-map (kbd "C-c p r") #'arrow-project-reorder) ;; reorder bookmarks
 
 ;; Org
 (define-key arrow-mode-map (kbd "C-c o o") #'arrow-org-open-project)  ; project notes
@@ -179,6 +184,7 @@ These are my keybindings, feel free to copy them.
 ",c" '(arrow-clear-all      :which-key "clear all")
 ",n" '(arrow-next-line      :which-key "next")
 ",p" '(arrow-prev-line      :which-key "prev")
+",r" '(arrow-reorder        :which-key "reorder")
 ;; Project layer
 "."  '(:ignore t :which-key "project marks")
 ".." '(arrow-project-show   :which-key "show")
@@ -187,6 +193,7 @@ These are my keybindings, feel free to copy them.
 ".d" '(arrow-project-delete :which-key "delete")
 ".n" '(arrow-project-next   :which-key "next")
 ".p" '(arrow-project-prev   :which-key "prev")
+".r" '(arrow-project-reorder :which-key "reorder")
 ;; Global layer
 "/" '(:ignore t :which-key "global")
 "//" '(arrow-global-show    :which-key "sow")
@@ -196,6 +203,7 @@ These are my keybindings, feel free to copy them.
 "/c" '(arrow-global-clear-all :which-key "clear all")
 "/n" '(arrow-global-next    :which-key "next")
 "/p" '(arrow-global-prev    :which-key "prev")
+"/r" '(arrow-global-reorder :which-key "reorder")
 ;; arrow-Org
 "oo" '(arrow-org-list-project-notes :which-key "org list notes")
 "of" '(arrow-org-open-file          :which-key "org for file")

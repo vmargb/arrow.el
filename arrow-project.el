@@ -139,7 +139,23 @@
          (t                    ; normal open
           (find-file full-path)))))))
 
-;; --- project-wide cycling
+(defun arrow-project-reorder ()
+  "Interactively reorder project bookmarks.  select the bookmark to move.
+select which bookmark to insert it before (same key = move to end)."
+  (interactive)
+  (let* ((root  (arrow-project--root))
+         (alist (arrow-project--load root))
+         (fmt   (lambda (char path)
+                  (format " [%s] %s"
+                          (propertize (char-to-string char) 'face 'arrow-key-face)
+                          path))))
+    (unless alist (user-error "No project bookmarks to reorder"))
+    (when-let* ((source-key (arrow--show-reorder-popup "Project: Reorder" alist fmt nil))
+                (target-key (arrow--show-reorder-popup "Project: Reorder" alist fmt source-key)))
+      (arrow-project--save root (arrow--reorder-alist alist source-key target-key))
+      (message "Moved project bookmark '%c'." source-key))))
+
+
 
 (defun arrow-project-cycle (direction)
   "Cycle project bookmarks.  DIRECTION is 1 (next) or -1 (prev)."

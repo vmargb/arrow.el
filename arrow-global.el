@@ -147,6 +147,24 @@ Supports splits: C-key (horizontal split), S-key (vertical split)."
          (t
           (find-file path)))))))
 
+;;;###autoload
+(defun arrow-global-reorder ()
+  "Interactively reorder global bookmarks.  select the bookmark to move.
+then select which bookmark to insert it before (same key = move to end)."
+  (interactive)
+  (let* ((alist (arrow-global--load))
+         (fmt   (lambda (char path)
+                  (let* ((label (abbreviate-file-name path))
+                         (label (truncate-string-to-width label 60 0 nil "…")))
+                    (format " [%s] %s"
+                            (propertize (char-to-string char) 'face 'arrow-key-face)
+                            label)))))
+    (unless alist (user-error "No global bookmarks to reorder"))
+    (when-let* ((source-key (arrow--show-reorder-popup "Global: Reorder" alist fmt nil))
+                (target-key (arrow--show-reorder-popup "Global: Reorder" alist fmt source-key)))
+      (arrow-global--save (arrow--reorder-alist alist source-key target-key))
+      (message "Moved global bookmark '%c'." source-key))))
+
 ;;; Cycling
 
 (defun arrow-global--cycle (direction)

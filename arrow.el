@@ -36,6 +36,12 @@
   :type 'boolean
   :group 'arrow)
 
+(defcustom arrow-auto-sort nil
+  "If non-nil, keep buffer bookmarks sorted by line number after every addition.
+The popup and cycling order will reflect document order rather than insertion order."
+  :type 'boolean
+  :group 'arrow)
+
 (defcustom arrow-visual-marker t
   "If non-nil, displays fringe marker with the keybinding on the same line."
   :type 'boolean
@@ -157,6 +163,26 @@ Set to 0 (default) for the classic single-line preview."
         (progn (arrow--promote char) (message "Promoted bookmark '%c'." char))
       (message "No bookmark found for '%c'" char))))
 
+;;; Sorting
+
+(defun arrow--sort-by-position ()
+  "Sort `arrow-alist' in place by ascending marker position and save."
+  (setq arrow-alist
+        (sort (copy-sequence arrow-alist)
+              (lambda (a b)
+                (< (or (marker-position (cdr a)) 0)
+                   (or (marker-position (cdr b)) 0)))))
+  (arrow--save-to-file))
+
+(defun arrow-sort-bookmarks ()
+  "Sort all buffer bookmarks by their line number (top → bottom).
+Useful as a one-shot command when `arrow-auto-sort' is disabled."
+  (interactive)
+  (unless arrow-alist (user-error "No buffer bookmarks to sort"))
+  (arrow--sort-by-position)
+  (when arrow-visual-marker (arrow--refresh-indicators))
+  (message "Buffer bookmarks sorted by line number."))
+
 (defun arrow-add ()
   "Add a bookmark with keypress."
   (interactive)
@@ -169,7 +195,10 @@ Set to 0 (default) for the classic single-line preview."
                  input))
          (marker (point-marker)))
     (setf (alist-get char arrow-alist) marker)
-    (if arrow-auto-promote (arrow--promote char) (arrow--save-to-file))
+    (cond ;; sort takes precedence over auto-promote
+     (arrow-auto-sort    (arrow--sort-by-position))
+     (arrow-auto-promote (arrow--promote char))
+     (t                  (arrow--save-to-file)))
     (message "Added bookmark '%c' at line %d" char (line-number-at-pos))
     (when arrow-visual-marker
       (arrow--refresh-indicators))))
@@ -218,6 +247,22 @@ Set to 0 (default) for the classic single-line preview."
       (goto-char marker))))
 
 
+(defun arrow-reorder ()
+  "Interactively reorder buffer bookmarks.  select the bookmark to move.
+then select which bookmark to insert it before (same key = move to end)."
+  (interactive)
+  (unless arrow-alist (user-error "No buffer bookmarks to reorder"))
+  (when-let* ((source-key (arrow--show-reorder-popup
+                           "Buffer – Reorder" arrow-alist
+                           #'arrow--format-bookmark-entry nil))
+              (target-key (arrow--show-reorder-popup
+                           "Buffer – Reorder" arrow-alist
+                           #'arrow--format-bookmark-entry source-key)))
+    (setq arrow-alist (arrow--reorder-alist arrow-alist source-key target-key))
+    (arrow--save-to-file)
+    (when arrow-visual-marker (arrow--refresh-indicators))
+    (message "Moved bookmark '%c'." source-key)))
+
 (defun arrow-jump ()
   "Unified dispatcher for jumping to a buffer, project, or global bookmark."
   (interactive)
@@ -245,7 +290,7 @@ Clamps to buffer boundaries and returns an empty string for out-of-range."
      (buffer-substring (line-beginning-position) (line-end-position)))))
 
 (defun arrow--format-bookmark-entry (char marker)
-  "Format a single bookmark entry for the popup.
+  "Format a single bookmark entry by CHAR for the popup.
 When `arrow-preview-context' is 0 the classic one-liner is returned.
 When it is N > 0, a multi-line block of (header + N before + bookmark
 line + N after + blank separator) is returned so nearby code is visible."

@@ -186,5 +186,79 @@ Return (SELECTION . MODIFIERS) or nil."
       (arrow-close-popup))
     result))
 
+;;; reorder helpers
+
+(defun arrow--reorder-alist (alist source-key target-key)
+  "Return a new alist with SOURCE-KEY moved before TARGET-KEY.
+If SOURCE-KEY equals TARGET-KEY, SOURCE-KEY is moved to the end of the list."
+  (let* ((source-entry (assoc source-key alist))
+         (rest (assq-delete-all source-key alist)))
+    (if (eq source-key target-key)
+        ;; same key pressed → move to end
+        (append rest (list source-entry))
+      ;; insert source before target
+      (let (result inserted)
+        (dolist (entry rest)
+          (when (and (not inserted) (eq (car entry) target-key))
+            (push source-entry result)
+            (setq inserted t))
+          (push entry result))
+        ;; target not found (shouldn't happen) → append
+        (unless inserted (push source-entry result))
+        (nreverse result)))))
+
+(defun arrow--show-reorder-popup (title alist format-fn selected-key)
+  "Show a two-step reorder popup over ALIST.
+TITLE and FORMAT-FN work the same as in `arrow--show-popup'
+SELECTED-KEY is the bookmark being moved (nil in step 1)."
+  (unless alist (user-error "No bookmarks to reorder"))
+  (let ((buf (get-buffer-create " *arrow-popup*"))
+        (text-lines '()))
+
+    (dolist (bm alist)
+      (let* ((is-selected (and selected-key (eq (car bm) selected-key)))
+             (line (funcall format-fn (car bm) (cdr bm)))
+             ;; highlight the item currently being moved
+             (line (if is-selected
+                       (propertize line 'face '(:weight bold :underline t))
+                     line)))
+        (push line text-lines)))
+
+    (with-current-buffer buf
+      (erase-buffer)
+      (setq header-line-format
+            (concat (propertize (format " %s " title) 'face 'bold)
+                    (propertize
+                     (if selected-key
+                         (format " Moving [%c] -> insert BEFORE which? (same key = move to end) | [q] Cancel"
+                                 selected-key)
+                       " [Key] Select bookmark to MOVE | [q] Quit")
+                     'face 'arrow-legend-face)))
+      (setq mode-line-format nil
+            cursor-type nil
+            cursor-in-non-selected-windows nil
+            truncate-lines t)
+      (insert (string-join (reverse text-lines) "\n"))
+      (goto-char (point-min)))
+
+    (if (display-graphic-p)
+        (arrow--display-child-frame buf)
+      (setq arrow--popup-window (display-buffer buf '((display-buffer-at-bottom)
+                                                      (window-height . fit-window-to-buffer)))))
+    (redisplay t)
+
+    (unwind-protect
+        (let* ((event   (read-key "Select: "))
+               (raw-key (event-basic-type event)))
+          (cond
+           ((or (eq event ?\C-g) (eq event ?q))
+            (message "Cancelled.")
+            nil)
+           ((assoc raw-key alist) raw-key)
+           (t
+            (message "No bookmark for key: %s" (single-key-description event))
+            nil)))
+      (arrow-close-popup))))
+
 (provide 'arrow-core)
 ;;; arrow-core.el ends here
