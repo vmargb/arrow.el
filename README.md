@@ -92,7 +92,7 @@ Ensure you have `(elpaca-use-package-mode)`
 (setq arrow-org-window-behavior 'same-window) ;; 'same-window, 'other-window, 'other-frame
 ```
 
-#### Doom-Modeline integration
+#### `Doom-Modeline` integration (optional)
 Add this to your `init.el` after loading both doom-modeline & arrow:
 
 ```elisp
@@ -102,6 +102,18 @@ Add this to your `init.el` after loading both doom-modeline & arrow:
   (doom-modeline-add-segment 'arrow-project 'misc-info :after 'main))
 ```
 ensure you have `(setq arrow-project-modeline t)` for this to work
+
+#### `project.el` integration (optional)
+Add your project level bookmarks to `project.el`'s minibuffer options
+to quickly jump to a project and your main files without typing:
+
+```elisp
+(with-eval-after-load 'project
+  (add-to-list 'project-switch-commands
+               '(arrow-project-show "Bookmarks")
+               t)
+  (define-key project-prefix-map "." #'arrow-project-show))
+```
 
 ## Commands
 

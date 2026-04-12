@@ -108,6 +108,9 @@
          (frame (make-frame
                  `((parent-frame . ,parent) (minibuffer . nil) (undecorated . t)
                    (internal-border-width . 3)
+                   (tab-bar-lines . 0)    ; suppress tab-bar
+                   (tool-bar-lines . 0)   ; suppress tool bar
+                   (menu-bar-lines . 0)   ; suppress menu bar
                    (background-color . ,(face-background 'tooltip nil t))
                    (width . ,width-chars) (height . ,lines)
                    (left . ,left) (top . ,top)
