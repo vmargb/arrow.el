@@ -192,12 +192,11 @@ Return (SELECTION . MODIFIERS) or nil."
 ;;; reorder helpers
 
 (defun arrow--reorder-alist (alist source-key target-key)
-  "Return a new alist with SOURCE-KEY moved before TARGET-KEY.
+  "Return a new ALIST with SOURCE-KEY moved before TARGET-KEY.
 If SOURCE-KEY equals TARGET-KEY, SOURCE-KEY is moved to the end of the list."
   (let* ((source-entry (assoc source-key alist))
          (rest (assq-delete-all source-key alist)))
-    (if (eq source-key target-key)
-        ;; same key pressed → move to end
+    (if (eq source-key target-key) ;; if same key move to end
         (append rest (list source-entry))
       ;; insert source before target
       (let (result inserted)
@@ -206,7 +205,7 @@ If SOURCE-KEY equals TARGET-KEY, SOURCE-KEY is moved to the end of the list."
             (push source-entry result)
             (setq inserted t))
           (push entry result))
-        ;; target not found (shouldn't happen) → append
+        ;; append if target not found
         (unless inserted (push source-entry result))
         (nreverse result)))))
 

@@ -37,8 +37,7 @@
   :group 'arrow)
 
 (defcustom arrow-auto-sort nil
-  "If non-nil, keep buffer bookmarks sorted by line number after every addition.
-The popup and cycling order will reflect document order rather than insertion order."
+  "If non-nil, keep line bookmarks sorted by line number after every insertion."
   :type 'boolean
   :group 'arrow)
 
@@ -290,10 +289,9 @@ Clamps to buffer boundaries and returns an empty string for out-of-range."
      (buffer-substring (line-beginning-position) (line-end-position)))))
 
 (defun arrow--format-bookmark-entry (char marker)
-  "Format a single bookmark entry by CHAR for the popup.
-When `arrow-preview-context' is 0 the classic one-liner is returned.
-When it is N > 0, a multi-line block of (header + N before + bookmark
-line + N after + blank separator) is returned so nearby code is visible."
+  "Format a single bookmark entry by CHAR & MARKER for the popup.
+When `arrow-preview-context' is 0,  return one line.
+When it is N > 0: N before + bookmark line + N after is returned."
   (if (not (marker-buffer marker))
       (format " [%s] <dead marker>"
               (propertize (char-to-string char) 'face 'arrow-key-face))
