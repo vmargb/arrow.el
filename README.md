@@ -93,12 +93,7 @@ Ensure you have `(elpaca-use-package-mode)`
 ```
 
 
-
 ### Doom-Modeline integration
-
-<p><em>Small doom-modeline indicator showing the current project bookmark (enable with <code>setq arrow-project-modeline t</code>)</em></p>
-
-Place that right after the Doom-Modeline code block.
 
 #### `Doom-Modeline` integration (optional)
 <div align="center">
@@ -120,8 +115,7 @@ to quickly jump to a project and your main files without typing:
 ```elisp
 (with-eval-after-load 'project
   (add-to-list 'project-switch-commands
-               '(arrow-project-show "Bookmarks")
-               t)
+               '(arrow-project-show "Bookmarks") t)
   (define-key project-prefix-map "." #'arrow-project-show))
 ```
 
@@ -197,7 +191,7 @@ If the above commands are too overwhelming `arrow-jump` has you covered.
 **General keybinds:**
 These are my keybindings, feel free to copy them.
 ```elisp
-;; Buffer (arrow.el)
+;; Buffer
 ","  '(:ignore t :which-key "marks")
 ",," '(arrow-show :which-key "show")
 ",a" '(arrow-add            :which-key "add")
