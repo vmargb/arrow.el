@@ -93,9 +93,8 @@ Ensure you have `(elpaca-use-package-mode)`
 ```
 
 
-### Doom-Modeline integration
+### `Doom-Modeline` integration (optional)
 
-#### `Doom-Modeline` integration (optional)
 <div align="center">
 <img src="screenshots/modeline.png" alt="Doom modeline with arrow project indicator" width="265" height="80"/>
 <p><em>Small doom-modeline indicator showing the current project bookmark (enable with <code>setq arrow-project-modeline t</code>)</em></p>
@@ -108,7 +107,7 @@ Ensure you have `(elpaca-use-package-mode)`
   (doom-modeline-add-segment 'arrow-project 'misc-info :after 'main))
 ```
 
-#### `project.el` integration (optional)
+### `project.el` integration (optional)
 Add your project level bookmarks to `project.el`'s minibuffer commands
 to quickly jump to a project and your main files without typing:
 
