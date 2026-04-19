@@ -36,12 +36,7 @@ Arrow introduces four layers of bookmarks to help you stay organized:
 - **Buffer** - per-file line number bookmarks
 - **Org** - per-project & per-buffer org bookmarks
 
-arrow.el provides seamless navigation across all layers with a unified interface. Unlike Emacs registers or Vim/Evil marks, these are properly isolated per layer and immune to clipboard pollution (yanks/deletes won't litter your bookmarks). QOL features include visual fringe markers, a floating hover menu, and at most two keybinds to jump to any bookmark.
-
-### Org integration (optional)
-The Org layer extends Arrow further by dynamically linking your project to private documentation(outside of the repo). Each project has a bookmark to its own Org file, allowing every source file in the project to connect back to it. Additionally, every file in the project also has its own distinct org file.
-
-This is not an alternative to `org-capture`: The typical org-capture flow doesn’t provide a natural reading/review experience for reconnecting with complex codebases after months away. Arrow makes documentation first-class and directly reachable from code, instead of scattering quick snippets into a global capture inbox that may never be revisited.
+arrow.el provides seamless navigation across all layers with a unified interface. Unlike Emacs registers or Vim/Evil marks, these are properly isolated per layer and immune to clipboard pollution (yanks/deletes won't litter your bookmarks). QOL features include visual margin markers, a floating hover menu, and at most two keybinds to jump to any bookmark.
 
 ---
 
@@ -92,6 +87,10 @@ Ensure you have `(elpaca-use-package-mode)`
 (setq arrow-org-window-behavior 'same-window) ;; 'same-window, 'other-window, 'other-frame
 ```
 
+### Org integration
+The Org layer extends Arrow further by dynamically linking your project to private documentation(outside of the repo). Each project has a bookmark to its own Org file, allowing every source file in the project to connect back to it. Additionally, every file in the project also has its own distinct org file.
+
+This is not an alternative to `org-capture`: The typical org-capture flow doesn’t provide a natural forward & back-linking reading experience for reconnecting with complex codebases(especially after months away). Arrow makes documentation first-class and directly reachable from code, instead of scattering quick snippets into a global capture inbox that may never be revisited.
 
 ### `Doom-Modeline` integration (optional)
 
@@ -109,7 +108,7 @@ Ensure you have `(elpaca-use-package-mode)`
 
 ### `project.el` integration (optional)
 Add your project level bookmarks to `project.el`'s minibuffer commands
-to quickly jump to a project and your main files without typing:
+to quickly jump to a project and file without typing:
 
 ```elisp
 (with-eval-after-load 'project
@@ -117,6 +116,7 @@ to quickly jump to a project and your main files without typing:
                '(arrow-project-show "Bookmarks") t)
   (define-key project-prefix-map "." #'arrow-project-show))
 ```
+
 
 ## Commands
 
@@ -230,4 +230,4 @@ These are my keybindings, feel free to copy them.
 
 ## Todo
 
-- Unified hydra-like menu that shows buffer-local + project bookmarks together
+- Unified hydra-like menu that shows buffer-local, project & global bookmarks together

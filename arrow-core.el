@@ -38,7 +38,7 @@
 ;;; storage helpers
 
 (defun arrow--get-storage-path (id-string)
-  "Return bookmark storage file given a unique ID-STRING."
+  "Return bookmark storage file given a unique ID-STRING (using md5)."
   (make-directory arrow-storage-dir t)
   (expand-file-name (concat (md5 id-string) ".bm") arrow-storage-dir))
 
@@ -48,14 +48,14 @@
     (arrow--get-storage-path (buffer-file-name))))
 
 (defun arrow--save-data (file data)
-  "Generic function to save DATA to FILE."
+  "Function to save DATA to FILE."
   (when file
     (with-temp-file file
       (let ((print-level nil) (print-length nil))
         (insert (prin1-to-string data))))))
 
 (defun arrow--load-data (file)
-  "Generic function to load data from FILE, or nil if not present."
+  "Function to load data from FILE, or nil if not present."
   (when (and file (file-exists-p file))
     (with-temp-buffer
       (insert-file-contents file)
@@ -81,7 +81,7 @@
 ;;; popup display helpers
 
 (defun arrow-close-popup ()
-  "Close the transient popup window/frame."
+  "Close the popup window/frame."
   (when (frame-live-p arrow--popup-frame)
     (delete-frame arrow--popup-frame)
     (setq arrow--popup-frame nil))
@@ -128,7 +128,7 @@
     (?^ . ?6) (?& . ?7) (?* . ?8) (?\( . ?9) (?\) . ?0)
     (?_ . ?-) (?+ . ?=) (?{ . ?\[) (?} . ?\]) (?| . ?\\)
     (?: . ?\;) (?\" . ?') (?< . ?,) (?> . ?.) (?? . ?/))
-  "Mapping of shifted symbols to their base keys.")
+  "Map of shifted symbols to their base keys for when creating window split.")
 
 (defface arrow-legend-face
   '((t (:inherit shadow :slant italic :height 0.9)))

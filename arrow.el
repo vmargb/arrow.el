@@ -62,8 +62,7 @@
   :group 'arrow)
 
 (defcustom arrow-project-modeline-glyph "➶ "
-  "Glyph used for the modeline indicator.
-icons like '󱋱 ', '󰁕 ', or simply '➶ '."
+  "Glyph used for the modeline indicator.  '󱋱 ', '󰁕 ', '➶ '."
   :type 'string
   :group 'arrow)
 
@@ -154,7 +153,7 @@ Set to 0 (default) for the classic single-line preview."
       (arrow--save-to-file))))
 
 (defun arrow-promote-bookmark ()
-  "Promote a bookmark in list."
+  "Promote a bookmark to the top of the list."
   (interactive)
   (unless arrow-alist (user-error "No bookmarks to promote"))
   (let ((char (read-char "Promote bookmark key: ")))
@@ -174,8 +173,8 @@ Set to 0 (default) for the classic single-line preview."
   (arrow--save-to-file))
 
 (defun arrow-sort-bookmarks ()
-  "Sort all buffer bookmarks by their line number (top → bottom).
-Useful as a one-shot command when `arrow-auto-sort' is disabled."
+  "Sort all buffer bookmarks by their line number.
+Useful as a manual one-shot command when `arrow-auto-sort' is disabled."
   (interactive)
   (unless arrow-alist (user-error "No buffer bookmarks to sort"))
   (arrow--sort-by-position)
@@ -183,7 +182,7 @@ Useful as a one-shot command when `arrow-auto-sort' is disabled."
   (message "Buffer bookmarks sorted by line number."))
 
 (defun arrow-add ()
-  "Add a bookmark with keypress."
+  "Add a bookmark to list with char keypress."
   (interactive)
   (let* ((input (read-char "Bookmark key (1-9, a-z, RET for auto): "))
          (char (if (= input ?\r)
@@ -203,7 +202,7 @@ Useful as a one-shot command when `arrow-auto-sort' is disabled."
       (arrow--refresh-indicators))))
 
 (defun arrow-delete ()
-  "Delete a specific bookmark."
+  "Delete a char from the bookmark list."
   (interactive)
   (unless arrow-alist (user-error "No bookmarks to delete"))
   (let ((char (read-char "Delete bookmark key: ")))
@@ -217,7 +216,7 @@ Useful as a one-shot command when `arrow-auto-sort' is disabled."
       (message "No bookmark found for '%c'" char))))
 
 (defun arrow-clear-all ()
-  "Clear all bookmarks fr a buffer."
+  "Clear all buffer-local bookmarks for the current buffer."
   (interactive)
   (when (y-or-n-p "Clear all bookmarks for this file? ")
     (setq arrow-alist nil)
@@ -228,7 +227,7 @@ Useful as a one-shot command when `arrow-auto-sort' is disabled."
       (arrow--clear-indicators))))
 
 (defun arrow-jump-buffer ()
-  "Jump directly to a buffer bookmark."
+  "Jump directly to a buffer bookmark without popup."
   (interactive)
   (unless arrow-alist
     (user-error "No buffer bookmarks"))
@@ -298,7 +297,8 @@ When it is N > 0: N before + bookmark line + N after is returned."
     (let* ((ctx arrow-preview-context)
            (line (line-number-at-pos marker)))
       (if (zerop ctx)
-          ;; classic single-line format
+          ;; single-line format
+          ;; ------------------
           (let* ((raw (with-current-buffer (marker-buffer marker)
                         (save-excursion
                           (goto-char marker)
@@ -309,7 +309,8 @@ When it is N > 0: N before + bookmark line + N after is returned."
                     (propertize (char-to-string char) 'face 'arrow-key-face)
                     line preview))
 
-        ;; or context multi-line format
+        ;; multi-line format
+        ;; -----------------
         (with-current-buffer (marker-buffer marker)
           (save-excursion
             (goto-char marker)
@@ -322,7 +323,7 @@ When it is N > 0: N before + bookmark line + N after is returned."
                                         (txt    (arrow--get-context-line offset))
                                         (trunc  (truncate-string-to-width txt 62 0 nil "…")))
                                    (push (concat "      " trunc) acc)))
-                               (nreverse acc)))                  ; display order: oldest first
+                               (nreverse acc))) ; display order: oldest first
                    ;; the bookmarked line itself
                    (bm-txt  (arrow--get-context-line 0))
                    (bm-line (concat "   ▶ "
@@ -342,10 +343,10 @@ When it is N > 0: N before + bookmark line + N after is returned."
               (string-join parts "\n"))))))))
 
 (defun arrow-show ()
-  "Display file bookmarks in a popup and jump via single keypress.
-Supports splits: C-key (horizontal), S-key (vertical).
+  "Display buffer-local bookmarks in a popup and jump via single keypress.
+using splits: C-key (horizontal), S-key (vertical).
 The amount of context shown per entry is controlled by
-`arrow-preview-context' (0 = classic single line)."
+`arrow-preview-context' (0 = 0 lines above & below)."
   (interactive)
   (when-let* ((result
                (arrow--show-popup
@@ -374,7 +375,7 @@ The amount of context shown per entry is controlled by
         (lambda (a b) (< (marker-position (cdr a)) (marker-position (cdr b))))))
 
 (defun arrow-next-line ()
-  "Move to the next local bookmark in the buffer."
+  "Move to the next buffer bookmark in the buffer."
   (interactive)
   (unless arrow-alist (user-error "No buffer bookmarks"))
   (let* ((sorted (arrow--get-sorted-alist))
@@ -387,7 +388,7 @@ The amount of context shown per entry is controlled by
     (message "Local bookmark: %c" (car target))))
 
 (defun arrow-prev-line ()
-  "Move to the previous local bookmark."
+  "Move to the previous buffer bookmark."
   (interactive)
   (unless arrow-alist (user-error "No buffer bookmarks"))
   (let* ((sorted (reverse (arrow--get-sorted-alist)))
@@ -416,7 +417,7 @@ The amount of context shown per entry is controlled by
 
 ;;;###autoload
 (define-minor-mode arrow-mode
-  "Minor mode for file-local transient bookmarks."
+  "Minor mode for buffer-local bookmarks."
   :lighter " Arrow"
   :keymap arrow-mode-map
   (if arrow-mode

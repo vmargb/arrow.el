@@ -85,7 +85,7 @@
 
 
 (defun arrow-jump-project ()
-  "Jump directly to a project bookmark."
+  "Jump directly to a project bookmark without menu."
   (interactive)
   (let* ((root (arrow-project--root))
          (alist (arrow-project--load root)))

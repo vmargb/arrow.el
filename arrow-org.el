@@ -20,7 +20,7 @@
 (declare-function org-entry-get "org" (pom property &optional inherit literal-nil))
 
 (defgroup arrow-org nil
-  "Note-taking integration for arrow."
+  "Org-mode bookmarks for arrow."
   :group 'arrow)
 
 (defcustom arrow-org-directory "~/org/arrow-notes/"
@@ -43,7 +43,7 @@
 ;;; helpers
 
 (defun arrow-org--is-note-buffer-p ()
-  "Check if the current buffer is an Arrow note."
+  "Check if the current buffer is an Org note."
   (and (derived-mode-p 'org-mode)
        (string-prefix-p (expand-file-name arrow-org-directory)
                         (or (buffer-file-name) ""))))
@@ -84,7 +84,7 @@
 (defun arrow-org--return-to-source (source &optional return-pos)
   "Return to SOURCE file at RETURN-POS, closing the org note's window or frame.
 Mirrors how the note was opened, so same-window uses `find-file', `other-window'
-deletes the note window, `other-frame' deletes the note frame"
+deletes the note window and `other-frame' deletes the note frame"
   (save-buffer)
   (pcase arrow-org-window-behavior
     ('other-frame
@@ -120,7 +120,7 @@ deletes the note window, `other-frame' deletes the note frame"
 ;;; commands
 
 (defun arrow-org-open-project ()
-  "Toggle between project-wide notes and the current file.
+  "Toggle between project-wide notes from any source file.
 Always returns to the specific file you came from."
   (interactive)
   (if (arrow-org--is-note-buffer-p)
