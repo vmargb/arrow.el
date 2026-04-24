@@ -266,10 +266,10 @@ then select which bookmark to insert it before (same key = move to end)."
 (defun arrow-jump ()
   "Unified dispatcher for jumping to a buffer, project, or global bookmark."
   (interactive)
-  (let* ((b-str (propertize "[b]" 'face '(:foreground "DeepSkyBlue"       :weight bold)))
-         (p-str (propertize "[p]" 'face '(:foreground "Orange"            :weight bold)))
-         (g-str (propertize "[g]" 'face '(:foreground "MediumSpringGreen" :weight bold)))
-         (o-str (propertize "[o]" 'face '(:foreground "MediumOrchid"      :weight bold)))
+  (let* ((b-str (propertize "[b]" 'face '(:inherit font-lock-keyword-face :weight bold)))
+         (p-str (propertize "[p]" 'face '(:inherit font-lock-type-face     :weight bold)))
+         (g-str (propertize "[g]" 'face '(:inherit success                 :weight bold)))
+         (o-str (propertize "[o]" 'face '(:inherit warning                 :weight bold)))
          (choice (read-char-choice
                   (format "%suffer, %sroject, %slobal, %srg: " b-str p-str g-str o-str)
                   '(?b ?p ?g ?o))))

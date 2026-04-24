@@ -30,7 +30,7 @@
 (defvar arrow--popup-window nil)
 
 (defface arrow-key-face
-  '((t (:inherit font-lock-keyword-face :weight bold :foreground "#FF6B6B")))
+  '((t (:inherit font-lock-keyword-face :weight bold)))
   "Face for highlighting bookmark keys in the popup."
   :group 'arrow-core)
 
