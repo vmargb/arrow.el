@@ -17,7 +17,9 @@
 
 (require 'subr-x)
 (require 'arrow-core)
-
+(require 'arrow-global)
+(require 'arrow-project)
+(require 'arrow-org)
 
 (defgroup arrow nil
   "File-local bookmarks with transient popups."
@@ -411,10 +413,6 @@ The amount of context shown per entry is controlled by
   '(:eval (arrow-project-modeline-string))
   "The modeline segment for arrow.el.")
 
-;; add to global-mode-string so it shows up in
-;; standard Emacs and Doom Modeline (via the misc-info segment).
-(add-to-list 'global-mode-string '("" arrow-modeline-segment) t)
-
 ;;;###autoload
 (define-minor-mode arrow-mode
   "Minor mode for buffer-local bookmarks."
@@ -422,6 +420,7 @@ The amount of context shown per entry is controlled by
   :keymap arrow-mode-map
   (if arrow-mode
       (progn
+        (add-to-list 'global-mode-string '("" arrow-modeline-segment) t)
         (arrow--load-from-file)
         (when arrow-visual-marker
           (if (eq arrow-visual-marker-position 'right) ;; ensure correct position
@@ -455,10 +454,6 @@ has stored Arrow bookmarks on disk."
   (if arrow-auto-mode
       (add-hook 'find-file-hook #'arrow--maybe-load)
     (remove-hook 'find-file-hook #'arrow--maybe-load)))
-
-(require 'arrow-global)
-(require 'arrow-project)
-(require 'arrow-org)
 
 (provide 'arrow)
 

@@ -176,7 +176,7 @@ If the above commands are too overwhelming `arrow-jump` has you covered.
 (define-key arrow-mode-map (kbd "C-c p a") #'arrow-project-add) ;; add project file mark
 (define-key arrow-mode-map (kbd "C-c p l") #'arrow-project-show) ;; show all files
 (define-key arrow-mode-map (kbd "C-c p d") #'arrow-project-delete) ;; delete file
-(define-key arrow-mode-map (kbd "C-c p j") #'arrow-jump-project) ;; jump to file (no UI)
+(define-key arrow-mode-map (kbd "C-c p j") #'arrow-project-jump) ;; jump to file (no UI)
 (define-key arrow-mode-map (kbd "C-c p n") #'arrow-project-next) ;; next file
 (define-key arrow-mode-map (kbd "C-c p p") #'arrow-project-prev) ;; previous file
 (define-key arrow-mode-map (kbd "C-c p r") #'arrow-project-reorder) ;; reorder bookmarks
@@ -203,7 +203,7 @@ These are my keybindings, feel free to copy them.
 ;; Project layer
 "."  '(:ignore t :which-key "project marks")
 ".." '(arrow-project-show   :which-key "show")
-".j" '(arrow-jump-project   :which-key "show")
+".j" '(arrow-project-jump   :which-key "show")
 ".a" '(arrow-project-add    :which-key "add")
 ".d" '(arrow-project-delete :which-key "delete")
 ".n" '(arrow-project-next   :which-key "next")
@@ -213,7 +213,7 @@ These are my keybindings, feel free to copy them.
 "/" '(:ignore t :which-key "global")
 "//" '(arrow-global-show    :which-key "sow")
 "/a" '(arrow-global-add     :which-key "add")
-"/j" '(arrow-jump-global    :which-key "add")
+"/j" '(arrow-global-jump    :which-key "add")
 "/d" '(arrow-global-delete  :which-key "delete")
 "/c" '(arrow-global-clear-all :which-key "clear all")
 "/n" '(arrow-global-next    :which-key "next")

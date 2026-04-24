@@ -13,7 +13,6 @@
 
 ;;; Code:
 
-(require 'arrow-core)
 (require 'project)
 
 ;; forward declarations
@@ -47,6 +46,7 @@
   (puthash root alist arrow-project-cache)
   (arrow--save-data (arrow-project--file root) alist))
 
+;;;###autoload
 (defun arrow-project-add ()
   "Add file to project list."
   (interactive)
@@ -69,6 +69,7 @@
     (arrow-project--save root alist)
     (message "Added project bookmark '%c' for %s" char file-path)))
 
+;;;###autoload
 (defun arrow-project-delete ()
   "Delete file from project list."
   (interactive)
@@ -84,7 +85,8 @@
         (message "No project bookmark found for '%c'" char)))))
 
 
-(defun arrow-jump-project ()
+;;;###autoload
+(defun arrow-project-jump ()
   "Jump directly to a project bookmark without menu."
   (interactive)
   (let* ((root (arrow-project--root))
@@ -106,6 +108,7 @@
         (find-file (expand-file-name path root))))))
 
 
+;;;###autoload
 (defun arrow-project-show ()
   "Show project bookmarks.  Support splits: C-key (horizontal), S-key (vertical)."
   (interactive)
@@ -139,6 +142,7 @@
          (t                    ; normal open
           (find-file full-path)))))))
 
+;;;###autoload
 (defun arrow-project-reorder ()
   "Interactively reorder project bookmarks.  select the bookmark to move.
 select which bookmark to insert it before (same key = move to end)."
@@ -178,9 +182,12 @@ select which bookmark to insert it before (same key = move to end)."
       (find-file (expand-file-name (cdr target) root))
       (message "Project [%c]: %s" (car target) (cdr target)))))
 
+;;;###autoload
 (defun arrow-project-next ()
   "Move forward in project list."
   (interactive) (arrow-project-cycle 1))
+
+;;;###autoload
 (defun arrow-project-prev ()
   "Move backward in project list."
   (interactive) (arrow-project-cycle -1))

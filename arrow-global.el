@@ -15,8 +15,6 @@
 
 ;;; Code:
 
-(require 'arrow-core)
-
 (defgroup arrow-global nil
   "Global (cross-project) bookmarks for arrow."
   :group 'arrow)
@@ -95,7 +93,7 @@ Populated on first use and kept in sync with disk.")
     (message "Cleared all global bookmarks.")))
 
 ;;;###autoload
-(defun arrow-jump-global ()
+(defun arrow-global-jump ()
   "Jump directly to a global bookmark without a popup."
   (interactive)
   (let* ((alist (arrow-global--load)))

@@ -119,6 +119,7 @@ deletes the note window and `other-frame' deletes the note frame"
 
 ;;; commands
 
+;;;###autoload
 (defun arrow-org-open-project ()
   "Toggle between project-wide notes from any source file.
 Always returns to the specific file you came from."
@@ -143,6 +144,7 @@ Always returns to the specific file you came from."
         (goto-char (point-min))
         (org-set-property "ARROW_POS" (number-to-string current-pos))))))
 
+;;;###autoload
 (defun arrow-org-open-file ()
   "Toggle between file-specific notes and the source file.
 Maintains separate note files per source file."
@@ -164,6 +166,7 @@ Maintains separate note files per source file."
                        arrow-org-directory)))
       (arrow-org--open-and-setup note-path (buffer-file-name)))))
 
+;;;###autoload
 (defun arrow-org-open-function ()
   "Open or jump to an Org heading for the function at point.
 Uses the same per-file note as `arrow-org-open-file'.  If the note
@@ -205,6 +208,7 @@ to it, otherwise a new heading is created at the end of the file."
         (forward-line -1)
         (message "arrow-org: created heading for '%s'" fn-name)))))
 
+;;;###autoload
 (defun arrow-org-list-project-notes ()
   "List all project notes with completion."
   (interactive)
