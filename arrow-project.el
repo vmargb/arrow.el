@@ -23,11 +23,26 @@
 (defvar arrow-project-cache (make-hash-table :test 'equal)
   "Cache for project bookmarks to avoid constant disk IO.  Keyed by project root.")
 
+(defvar-local arrow-project--cached-root 'unset
+  "Cached project root for the current buffer.")
+
+(defvar-local arrow-project--modeline-cache nil
+  "Cons of (alist . string) caching the last modeline result.")
+
 (defun arrow-project--root ()
   "Return project root if found."
   (if-let ((proj (project-current)))
       (project-root proj)
     (user-error "Not currently in a project (via project.el)")))
+
+(defun arrow-project--get-root ()
+  "Return the project root for the current buffer, cached buffer-locally.
+Returns nil when the buffer is not inside a project."
+  (when (eq arrow-project--cached-root 'unset)
+    (setq arrow-project--cached-root
+          (when-let ((proj (project-current)))
+            (project-root proj))))
+  arrow-project--cached-root)
 
 (defun arrow-project--file (root)
   "Get storage file for project ROOT."
@@ -206,11 +221,23 @@ select which bookmark to insert it before (same key = move to end)."
     (car entry)))
 
 (defun arrow-project-modeline-string ()
-  "Generate the modeline string for the current project bookmark."
-  (when (and arrow-project-modeline (arrow-project--current-key))
-    (let ((key (arrow-project--current-key)))
-      (propertize (format " %s[%c] " arrow-project-modeline-glyph key)
-                  'face 'arrow-bookmark-face))))
+  "Return the modeline string for the current project bookmark.
+The result is cached buffer-locally and only recomputed when alist changes."
+  (when (and arrow-project-modeline (buffer-file-name))
+    (when-let* ((root  (arrow-project--get-root))
+                (alist (arrow-project--load root)))
+      (let ((cache arrow-project--modeline-cache))
+        (if (and cache (eq (car cache) alist))
+            (cdr cache) ;; if alist object unchanged return cached string (may be nil)
+          ;; if alist changed or first call then recompute and cache
+          (let* ((rel   (file-relative-name (buffer-file-name) root))
+                 (entry (rassoc rel alist))
+                 (str   (when entry
+                          (propertize
+                           (format " %s[%c] " arrow-project-modeline-glyph (car entry))
+                           'face 'arrow-bookmark-face))))
+            (setq arrow-project--modeline-cache (cons alist str))
+            str))))))
 
 (provide 'arrow-project)
 ;;; arrow-project.el ends here
