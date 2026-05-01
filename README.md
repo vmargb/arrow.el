@@ -18,7 +18,7 @@
 ---
 
 > [!NOTE]
-> arrow.el is heavily inspired by the neovim plugin [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim)
+> `arrow.el` was originally inspired by the Neovim plugin [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim), but it has since evolved independently and differs in design and implementation.
 
 <p>
 <br>
@@ -32,11 +32,25 @@
 
 Arrow introduces four layers of bookmarks to help you stay organized:
 - **Global** - cross-project bookmarks
-- **Project** - per-project file boookmarks
+- **Project** - per-project file bookmarks
 - **Buffer** - per-file line number bookmarks
 - **Org** - per-project & per-buffer org bookmarks
 
 arrow.el provides seamless navigation across all layers with a unified interface. Unlike Emacs registers or Vim/Evil marks, these are properly isolated per layer and immune to clipboard pollution (yanks/deletes won't litter your bookmarks). QOL features include visual margin markers, a floating hover menu, and at most two keybinds to jump to any bookmark.
+
+---
+
+## Key system (new)
+
+Bookmark keys are 1 or 2 characters. Single-char keys (`a`–`z`, `1`–`9`) are the default and jump instantly on the first keypress. However, when two bookmarks share the same leading letter such as `magit` and `modes`, for example, you can assign them 2-character keys like `ma` and `mo` instead, and arrow waits for the second character before jumping.
+
+The instant-jump is **prefix-free**: `m` and `ma` cannot coexist.
+- If `m` is taken, arrow will block `ma`
+- if `ma` is taken, arrow will block `m`.
+
+This means there is never any ambiguity about whether to wait for a second keypress.
+
+**Backwards compatibility**: existing bookmark files that stored integer character codes are migrated to strings automatically on first load. So no manual migration is needed, continue from where you left off.
 
 ---
 
@@ -81,16 +95,16 @@ Ensure you have `(elpaca-use-package-mode)`
 (setq arrow-auto-sort nil)    ;; auto sort bookmarks by line number on add
 (setq arrow-visual-marker t) ;; displays visual marker on line number
 (setq arrow-visual-marker-position 'left) ;; marker position(left or right)
-(setq arrow-project-modeline nil) ;; show modeline indicaor for arrow-project
+(setq arrow-project-modeline nil) ;; show modeline indicator for arrow-project
 
 ;; Org layer settings
 (setq arrow-org-window-behavior 'same-window) ;; 'same-window, 'other-window, 'other-frame
 ```
 
 ### Org integration
-The Org layer extends Arrow further by dynamically linking your project to private documentation(outside of the repo). Each project has a bookmark to its own Org file, allowing every source file in the project to connect back to it. Additionally, every file in the project also has its own distinct org file.
+The Org layer extends Arrow further by dynamically linking your project to private documentation (outside of the repo). Each project has a bookmark to its own Org file, allowing every source file in the project to connect back to it. Additionally, every file in the project also has its own distinct org file.
 
-This is not an alternative to `org-capture`: The typical org-capture flow doesn’t provide a natural forward & back-linking reading experience for reconnecting with complex codebases(especially after months away). Arrow makes documentation first-class and directly reachable from code, instead of scattering quick snippets into a global capture inbox that may never be revisited.
+This is not an alternative to `org-capture`: the typical org-capture flow doesn't provide a natural forward & back-linking reading experience for reconnecting with complex codebases (especially after months away). Arrow makes documentation first-class and directly reachable from code, instead of scattering quick snippets into a global capture inbox that may never be revisited.
 
 ### `Doom-Modeline` integration (optional)
 
@@ -122,24 +136,24 @@ to quickly jump to a project and file without typing:
 
 ### Buffer bookmarks (line numbers)
 
-| Command                  | Description                               |
-| ------------------------ | ----------------------------------------- |
-| `arrow-add`              | Create bookmark at point (keys: a-z, 1-9) |
-| `arrow-show`             | Popup menu of buffer bookmarks            |
-| `arrow-delete`           | Remove specific bookmark                  |
-| `arrow-clear-all`        | Delete all buffer bookmarks               |
-| `arrow-promote-bookmark` | Move bookmark to top of list              |
-| `arrow-next-line` / `arrow-prev-line` | Cycle bookmarks                       |
-| `arrow-reorder`          | Interactively reorder buffer bookmarks    |
-| `arrow-sort-bookmarks`   | Sort buffer bookmarks by line number (one-shot) |
+| Command                  | Description                                        |
+| ------------------------ | -------------------------------------------------- |
+| `arrow-add`              | Create bookmark at point (keys: a-z, 1-9, or 2-char) |
+| `arrow-show`             | Popup menu of buffer bookmarks                     |
+| `arrow-delete`           | Remove specific bookmark                           |
+| `arrow-clear-all`        | Delete all buffer bookmarks                        |
+| `arrow-promote-bookmark` | Move bookmark to top of list                       |
+| `arrow-next-line` / `arrow-prev-line` | Cycle bookmarks                     |
+| `arrow-reorder`          | Interactively reorder buffer bookmarks             |
+| `arrow-sort-bookmarks`   | Sort buffer bookmarks by line number (one-shot)    |
 
 ### Project bookmarks (files)
-| Command                                     | Description                           |
-| ------------------------------------------- | ------------------------------------- |
-| `arrow-project-add`                         | Add current file to project bookmarks |
-| `arrow-project-show`                        | Show project bookmark menu            |
-| `arrow-project-delete`                      | Remove project bookmark               |
-| `arrow-project-next` / `arrow-project-prev` | Cycle bookmarks                       |
+| Command                                     | Description                             |
+| ------------------------------------------- | --------------------------------------- |
+| `arrow-project-add`                         | Add current file to project bookmarks   |
+| `arrow-project-show`                        | Show project bookmark menu              |
+| `arrow-project-delete`                      | Remove project bookmark                 |
+| `arrow-project-next` / `arrow-project-prev` | Cycle bookmarks                         |
 | `arrow-project-reorder`                     | Interactively reorder project bookmarks |
 
 ### Org bookmarks
@@ -211,7 +225,7 @@ These are my keybindings, feel free to copy them.
 ".r" '(arrow-project-reorder :which-key "reorder")
 ;; Global layer
 "/" '(:ignore t :which-key "global")
-"//" '(arrow-global-show    :which-key "sow")
+"//" '(arrow-global-show    :which-key "show")
 "/a" '(arrow-global-add     :which-key "add")
 "/j" '(arrow-global-jump    :which-key "add")
 "/d" '(arrow-global-delete  :which-key "delete")

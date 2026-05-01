@@ -2,16 +2,20 @@
 
 ;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
-;; Version: 1.0.2
+;; Version: 1.1.0
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
 ;;; Commentary:
 ;; Cross-project global file bookmarks, follows the same patterns as
-;; arrow-project.el and arrow.el but keyed to absolute paths, stored in a
-;; fixed file.  Accessible from anywhere regardless of project context
-;; Similar to M-x: bookmark-jump but adds unified workflow to arrow
+;; arrow-project.el and arrow.el but keyed to absolute paths.
+;; These marks are accessible from anywhere regardless of context.
+;; Similar to M-x bookmark-jump but adds a *unified* workflow to arrow.
+;;
+;; Keys are strings in arrow-core.el
+;; Legacy bookmark files that used integer character codes are migrated
+;; automatically on first load via `arrow--load-data'.
 
 ;;; Code:
 
@@ -22,7 +26,7 @@
 (defcustom arrow-global-file
   (expand-file-name "global.bm" arrow-storage-dir)
   "Path to the global bookmarks file.
-Each entry is an alist of (CHAR . ABSOLUTE-PATH)."
+Each entry is an alist of (STRING-KEY . ABSOLUTE-PATH)."
   :type 'file
   :group 'arrow-global)
 
@@ -33,43 +37,49 @@ Populated on first use and kept in sync with disk.")
 (defvar arrow-global--loaded nil
   "Non-nil once the global cache has been read from disk.")
 
+
 ;;; helpers
 
 (defun arrow-global--load ()
-  "Return global bookmarks alist, loading from disk if needed."
+  "Return global bookmarks alist, loading from disk if needed.
+`arrow--load-data' handles migration of legacy character keys to strings."
   (unless arrow-global--loaded
-    (setq arrow-global--cache (arrow--load-data arrow-global-file)
+    (setq arrow-global--cache  (arrow--load-data arrow-global-file)
           arrow-global--loaded t))
   arrow-global--cache)
 
 (defun arrow-global--save (alist)
-  "Persist ALIST to disk and update cache."
+  "Persist ALIST to disk and update the in-memory cache."
   (setq arrow-global--cache alist)
   (make-directory (file-name-directory arrow-global-file) t)
   (arrow--save-data arrow-global-file alist))
 
-;;; Commands
+
+;;; commands
 
 ;;;###autoload
 (defun arrow-global-add ()
-  "Bookmark the current file in the global list."
+  "Bookmark the current file in the global list.
+Press a letter or digit as the first key character.  Then press RET to
+confirm a single-character key, or press a second letter/digit to create a
+2-character key.  At the first prompt, RET auto-assigns the next free key."
   (interactive)
   (unless (buffer-file-name)
     (user-error "Current buffer is not visiting a file"))
-  (let* ((alist (arrow-global--load))
+  (let* ((alist     (arrow-global--load))
          (file-path (buffer-file-name))
-         (input (read-char "Global bookmark key (1-9, a-z, RET for auto): "))
-         (char (if (= input ?\r)
-                   (arrow--find-free-key-in alist)
-                 (unless (or (and (>= input ?a) (<= input ?z))
-                             (and (>= input ?1) (<= input ?9)))
-                   (user-error "Please use a letter (a-z), number (1-9), or RET"))
-                 input))
-         (new-alist (cons (cons char file-path)
-                          (assq-delete-all char alist))))
-    (arrow-global--save new-alist)
-    (message "Added global bookmark '%c' for %s"
-             char (abbreviate-file-name file-path))))
+         (raw-key   (arrow--read-bookmark-key "Global bookmark key" t))
+         (key       (or raw-key (arrow--find-free-key-in alist))))
+    ;; conflict check, skip when overwriting the same key
+    (unless (assoc key alist)
+      (when-let ((conflict (arrow--key-conflicts-p key alist)))
+        (user-error "Key conflict: [%s] is blocked by existing key [%s]"
+                    key conflict)))
+    (let ((new-alist (cons (cons key file-path)
+                           (assoc-delete-all key alist))))
+      (arrow-global--save new-alist)
+      (message "Added global bookmark [%s] for %s"
+               key (abbreviate-file-name file-path)))))
 
 ;;;###autoload
 (defun arrow-global-delete ()
@@ -77,12 +87,9 @@ Populated on first use and kept in sync with disk.")
   (interactive)
   (let ((alist (arrow-global--load)))
     (unless alist (user-error "No global bookmarks to delete"))
-    (let ((char (read-char "Delete global bookmark key: ")))
-      (if (alist-get char alist)
-          (progn
-            (arrow-global--save (assq-delete-all char alist))
-            (message "Deleted global bookmark '%c'" char))
-        (message "No global bookmark found for '%c'" char)))))
+    (let ((key (arrow--read-existing-key "Delete global bookmark key: " alist)))
+      (arrow-global--save (assoc-delete-all key alist))
+      (message "Deleted global bookmark [%s]" key))))
 
 ;;;###autoload
 (defun arrow-global-clear-all ()
@@ -98,27 +105,27 @@ Populated on first use and kept in sync with disk.")
   (interactive)
   (let* ((alist (arrow-global--load)))
     (unless alist (user-error "No global bookmarks"))
-    (let* ((char (read-char "Global bookmark: "))
-           (entry (assoc char alist)))
+    (let* ((key   (arrow--read-existing-key "Global bookmark: " alist))
+           (entry (assoc key alist)))
       (unless entry
-        (user-error "No global bookmark '%c'" char))
+        (user-error "No global bookmark [%s]" key))
       (let ((path (cdr entry)))
         (unless (file-exists-p path)
-          (user-error "Global bookmark '%c' points to missing file: %s"
-                      char (abbreviate-file-name path)))
+          (user-error "Global bookmark [%s] points to missing file: %s"
+                      key (abbreviate-file-name path)))
         (find-file path)))))
 
 ;;;###autoload
 (defun arrow-global-show ()
-  "Show global bookmarks popup and jump via single keypress.
-Supports splits: C-key (horizontal split), S-key (vertical split)."
+  "Show global bookmarks popup and jump via keypress.
+Window splits: C-key (horizontal split), S-key / uppercase (vertical split)."
   (interactive)
   (let ((alist (arrow-global--load)))
     (when-let* ((result
                  (arrow--show-popup
                   "Global"
                   alist
-                  (lambda (char path)
+                  (lambda (key path)
                     (let* ((exists (file-exists-p path))
                            (label  (abbreviate-file-name path))
                            ;; truncate to fit the 75-char popup frame
@@ -126,8 +133,7 @@ Supports splits: C-key (horizontal split), S-key (vertical split)."
                            (label  (if exists label
                                      (propertize label 'face 'shadow))))
                       (format " [%s] %s"
-                              (propertize (char-to-string char)
-                                          'face 'arrow-key-face)
+                              (propertize key 'face 'arrow-key-face)
                               label))))))
       (let* ((selection (car result))
              (mods      (cdr result))
@@ -147,47 +153,47 @@ Supports splits: C-key (horizontal split), S-key (vertical split)."
 
 ;;;###autoload
 (defun arrow-global-reorder ()
-  "Interactively reorder global bookmarks.  select the bookmark to move.
-then select which bookmark to insert it before (same key = move to end)."
+  "Interactively reorder global bookmarks.
+Select the bookmark to move, then select which bookmark to insert it before
+\(same key = move to end)."
   (interactive)
   (let* ((alist (arrow-global--load))
-         (fmt   (lambda (char path)
+         (fmt   (lambda (key path)
                   (let* ((label (abbreviate-file-name path))
                          (label (truncate-string-to-width label 60 0 nil "…")))
                     (format " [%s] %s"
-                            (propertize (char-to-string char) 'face 'arrow-key-face)
+                            (propertize key 'face 'arrow-key-face)
                             label)))))
     (unless alist (user-error "No global bookmarks to reorder"))
     (when-let* ((source-key (arrow--show-reorder-popup "Global: Reorder" alist fmt nil))
                 (target-key (arrow--show-reorder-popup "Global: Reorder" alist fmt source-key)))
       (arrow-global--save (arrow--reorder-alist alist source-key target-key))
-      (message "Moved global bookmark '%c'." source-key))))
+      (message "Moved global bookmark [%s]." source-key))))
 
-;;; Cycling
+
+;;; cycling
 
 (defun arrow-global--cycle (direction)
   "Cycle through global bookmarks.  DIRECTION is 1 (next) or -1 (prev)."
-  (let* ((alist (arrow-global--load))
-         (len (length alist))
+  (let* ((alist        (arrow-global--load))
+         (len          (length alist))
          (current-file (buffer-file-name))
-         (current-idx nil)
-         (counter 0))
+         (current-idx  nil)
+         (counter      0))
     (unless alist (user-error "No global bookmarks"))
     (when current-file
       (dolist (item alist)
         (when (string= (cdr item) current-file)
           (setq current-idx counter))
         (setq counter (1+ counter))))
-    (let* ((new-idx (if current-idx
-                        (mod (+ current-idx direction) len)
-                      0))
-           (target (nth new-idx alist))
-           (path (cdr target)))
+    (let* ((new-idx (if current-idx (mod (+ current-idx direction) len) 0))
+           (target  (nth new-idx alist))
+           (path    (cdr target)))
       (unless (file-exists-p path)
-        (user-error "Global bookmark '%c' points to missing file: %s"
+        (user-error "Global bookmark [%s] points to missing file: %s"
                     (car target) (abbreviate-file-name path)))
       (find-file path)
-      (message "Global [%c]: %s" (car target) (abbreviate-file-name path)))))
+      (message "Global [%s]: %s" (car target) (abbreviate-file-name path)))))
 
 ;;;###autoload
 (defun arrow-global-next ()

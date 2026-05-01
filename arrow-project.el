@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
-;; Version: 1.0.2
+;; Version: 1.1.0
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -49,10 +49,11 @@ Returns nil when the buffer is not inside a project."
   (arrow--get-storage-path root))
 
 (defun arrow-project--load (root)
-  "Load bookmark alist for project ROOT."
+  "Load bookmark alist for project ROOT.
+`arrow--load-data' handles migration of legacy character keys to strings."
   (or (gethash root arrow-project-cache)
       (let* ((file (arrow-project--file root))
-             (data (or (arrow--load-data file) nil)))
+             (data (arrow--load-data file)))
         (puthash root data arrow-project-cache)
         data)))
 
@@ -61,141 +62,138 @@ Returns nil when the buffer is not inside a project."
   (puthash root alist arrow-project-cache)
   (arrow--save-data (arrow-project--file root) alist))
 
+
+;;; commands
+
 ;;;###autoload
 (defun arrow-project-add ()
-  "Add file to project list."
+  "Add the current file to the project bookmark list.
+Press a letter or digit as the first key character.  Then either press
+RET to confirm a 1-char key, or a second letter/digit for a 2-char key."
   (interactive)
   (unless (buffer-file-name)
     (user-error "Current buffer is not visiting a file"))
-  (let* ((root (arrow-project--root))
-         (alist (or (arrow-project--load root) nil))
+  (let* ((root      (arrow-project--root))
+         (alist     (or (arrow-project--load root) nil))
          (file-path (file-relative-name (buffer-file-name) root))
-         (input (read-char "Project bookmark key (1-9, a-z, RET for auto): "))
-         (char (if (= input ?\r)
-                   (arrow--find-free-key-in alist)
-                 (unless (or (and (>= input ?a) (<= input ?z))
-                             (and (>= input ?1) (<= input ?9)))
-                   (user-error "Please use a letter (a-z), number (1-9), or RET"))
-                 input)))
-    ;; alist is updated properly
-    (setq alist (cons (cons char file-path) (assq-delete-all char alist)))
+         (raw-key   (arrow--read-bookmark-key "Project bookmark key" t))
+         (key       (or raw-key (arrow--find-free-key-in alist))))
+    ;; conflict check
+    (unless (assoc key alist)
+      (when-let ((conflict (arrow--key-conflicts-p key alist)))
+        (user-error "Key conflict: [%s] is blocked by existing key [%s]"
+                    key conflict)))
+    (setq alist (cons (cons key file-path)
+                      (assoc-delete-all key alist)))
+    ;; auto-promote, entry is already at the front
     (when arrow-auto-promote
-      (setq alist (cons (assoc char alist) (assq-delete-all char alist))))
+      (setq alist (cons (assoc key alist)
+                        (assoc-delete-all key alist))))
     (arrow-project--save root alist)
-    (message "Added project bookmark '%c' for %s" char file-path)))
+    (message "Added project bookmark [%s] for %s" key file-path)))
 
 ;;;###autoload
 (defun arrow-project-delete ()
-  "Delete file from project list."
+  "Delete a file from the project bookmark list."
   (interactive)
-  (let* ((root (arrow-project--root))
+  (let* ((root  (arrow-project--root))
          (alist (arrow-project--load root)))
     (unless alist (user-error "No project bookmarks to delete"))
-    (let ((char (read-char "Delete project bookmark key: ")))
-      (if (alist-get char alist)
-          (progn
-            (setq alist (assq-delete-all char alist))
-            (arrow-project--save root alist)
-            (message "Deleted project bookmark '%c'" char))
-        (message "No project bookmark found for '%c'" char)))))
-
+    (let ((key (arrow--read-existing-key "Delete project bookmark key: " alist)))
+      (setq alist (assoc-delete-all key alist))
+      (arrow-project--save root alist)
+      (message "Deleted project bookmark [%s]" key))))
 
 ;;;###autoload
 (defun arrow-project-jump ()
-  "Jump directly to a project bookmark without menu."
+  "Jump directly to a project bookmark without a menu."
   (interactive)
-  (let* ((root (arrow-project--root))
+  (let* ((root  (arrow-project--root))
          (alist (arrow-project--load root)))
-
-    (unless alist
-      (user-error "No project bookmarks"))
-
-    (let* ((char (read-char "Project bookmark: "))
-           (entry (assoc char alist)))
-      (unless entry
-        (user-error "No project bookmark '%c'" char))
+    (unless alist (user-error "No project bookmarks"))
+    (let* ((key   (arrow--read-existing-key "Project bookmark: " alist))
+           (entry (assoc key alist)))
+      (unless entry (user-error "No project bookmark [%s]" key))
       (let ((path (cdr entry)))
         (when arrow-auto-promote
-          (let ((new-alist
-                 (cons entry (assq-delete-all char alist))))
-            (arrow-project--save root new-alist)))
-
+          (arrow-project--save root
+                               (cons entry (assoc-delete-all key alist))))
         (find-file (expand-file-name path root))))))
-
 
 ;;;###autoload
 (defun arrow-project-show ()
-  "Show project bookmarks.  Support splits: C-key (horizontal), S-key (vertical)."
+  "Show project bookmarks.  Window splits C-key (horizontal), S-key (vertical)."
   (interactive)
-  (let* ((root (arrow-project--root))
-         (alist (or (arrow-project--load root) nil))
+  (let* ((root      (arrow-project--root))
+         (alist     (or (arrow-project--load root) nil))
          (proj-name (file-name-nondirectory (directory-file-name root))))
-    (when-let* ((result (arrow--show-popup
-                         (format "Project (%s)" proj-name)
-                         alist
-                         (lambda (char path)
-                           (format " [%s] %s"
-                                   (propertize (char-to-string char) 'face 'arrow-key-face)
-                                   path)))))
+    (when-let* ((result
+                 (arrow--show-popup
+                  (format "Project (%s)" proj-name)
+                  alist
+                  (lambda (key path)
+                    (format " [%s] %s"
+                            (propertize key 'face 'arrow-key-face)
+                            path)))))
       (let* ((selection (car result))
-             (mods (cdr result))
-             (key (car selection))
-             (path (cdr selection))
+             (mods      (cdr result))
+             (key       (car selection))
+             (path      (cdr selection))
              (full-path (expand-file-name path root)))
 
         (when arrow-auto-promote
-          (let ((new-alist (cons (assoc key alist) (assq-delete-all key alist))))
-            (arrow-project--save root new-alist)))
-
+          (arrow-project--save root
+                               (cons (assoc key alist)
+                                     (assoc-delete-all key alist))))
         (cond
-         ((memq 'control mods) ; horizontal split
+         ((memq 'control mods)   ; horizontal split
           (select-window (split-window-below))
           (find-file full-path))
-         ((memq 'shift mods)   ; vertical split
+         ((memq 'shift mods)     ; vertical split
           (select-window (split-window-right))
           (find-file full-path))
-         (t                    ; normal open
+         (t                      ; normal open
           (find-file full-path)))))))
 
 ;;;###autoload
 (defun arrow-project-reorder ()
-  "Interactively reorder project bookmarks.  select the bookmark to move.
-select which bookmark to insert it before (same key = move to end)."
+  "Interactively reorder project bookmarks.
+Select the bookmark to move, then select which bookmark to insert it before
+\(same key = move to end)."
   (interactive)
   (let* ((root  (arrow-project--root))
          (alist (arrow-project--load root))
-         (fmt   (lambda (char path)
+         (fmt   (lambda (key path)
                   (format " [%s] %s"
-                          (propertize (char-to-string char) 'face 'arrow-key-face)
+                          (propertize key 'face 'arrow-key-face)
                           path))))
     (unless alist (user-error "No project bookmarks to reorder"))
     (when-let* ((source-key (arrow--show-reorder-popup "Project: Reorder" alist fmt nil))
                 (target-key (arrow--show-reorder-popup "Project: Reorder" alist fmt source-key)))
       (arrow-project--save root (arrow--reorder-alist alist source-key target-key))
-      (message "Moved project bookmark '%c'." source-key))))
+      (message "Moved project bookmark [%s]." source-key))))
 
 
+;;; cycling
 
 (defun arrow-project-cycle (direction)
   "Cycle project bookmarks.  DIRECTION is 1 (next) or -1 (prev)."
-  (let* ((root (arrow-project--root))
-         (alist (arrow-project--load root))
+  (let* ((root        (arrow-project--root))
+         (alist       (arrow-project--load root))
          (current-file (when (buffer-file-name)
                          (file-relative-name (buffer-file-name) root)))
-         (len (length alist))
+         (len         (length alist))
          (current-idx nil)
-         (counter 0))
+         (counter     0))
     (unless alist (user-error "No project bookmarks"))
-    ;; find the current index
     (dolist (item alist)
       (when (string= (cdr item) current-file)
         (setq current-idx counter))
       (setq counter (1+ counter)))
-
     (let* ((new-idx (if current-idx (mod (+ current-idx direction) len) 0))
-           (target (nth new-idx alist)))
+           (target  (nth new-idx alist)))
       (find-file (expand-file-name (cdr target) root))
-      (message "Project [%c]: %s" (car target) (cdr target)))))
+      (message "Project [%s]: %s" (car target) (cdr target)))))
 
 ;;;###autoload
 (defun arrow-project-next ()
@@ -207,17 +205,18 @@ select which bookmark to insert it before (same key = move to end)."
   "Move backward in project list."
   (interactive) (arrow-project-cycle -1))
 
-;; modeline-string
+
+;;; modeline
 
 (defun arrow-project--current-key ()
   "Return the project bookmark key for the current buffer, or nil if none."
-  (when-let* ((file (buffer-file-name))
-              (proj (project-current))
-              (root (project-root proj))
-              (alist (arrow-project--load root))
-              (rel-path (file-relative-name file root))
-              ;; rassoc looks up the alist by the value (file path) using `equal`
-              (entry (rassoc rel-path alist)))
+  (when-let* ((file   (buffer-file-name))
+              (proj   (project-current))
+              (root   (project-root proj))
+              (alist  (arrow-project--load root))
+              (rel    (file-relative-name file root))
+              ;; rassoc looks up by value using `equal'
+              (entry  (rassoc rel alist)))
     (car entry)))
 
 (defun arrow-project-modeline-string ()
@@ -228,13 +227,15 @@ The result is cached buffer-locally and only recomputed when alist changes."
                 (alist (arrow-project--load root)))
       (let ((cache arrow-project--modeline-cache))
         (if (and cache (eq (car cache) alist))
-            (cdr cache) ;; if alist object unchanged return cached string (may be nil)
-          ;; if alist changed or first call then recompute and cache
+            (cdr cache) ; if alist object unchanged, return cached string
+          ;; otherwise recompute and save in cache
           (let* ((rel   (file-relative-name (buffer-file-name) root))
                  (entry (rassoc rel alist))
                  (str   (when entry
                           (propertize
-                           (format " %s[%c] " arrow-project-modeline-glyph (car entry))
+                           (format " %s[%s] "
+                                   arrow-project-modeline-glyph
+                                   (car entry))
                            'face 'arrow-bookmark-face))))
             (setq arrow-project--modeline-cache (cons alist str))
             str))))))
