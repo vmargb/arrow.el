@@ -2,15 +2,21 @@
 
 <div align="center">
 
-  <h3>Buffer-local marks</h3>
-  <img src="screenshots/buffer-bookmarks.png" alt="Bookmark screenshot" width="600"/>
-  <p><em>Example using my <code>init.el</code>: d → dired, o → org, l → langs, t → themes, m → magit</em></p>
+  <h3>Global marks</h3>
+  <img src="screenshots/global.png" alt="Bookmark screenshot" width="600"/>
+  <p><em>Example global bookmarks to my config files</em></p>
 
   <br>
 
-  <h3>Project marks</h3>
-  <img src="screenshots/arrow-project.png" alt="Project screenshot" width="600"/>
-  <p><em>Example using user Emacs directory</em></p>
+  <h3>Project-local marks</h3>
+  <img src="screenshots/project.png" alt="Project screenshot" width="600"/>
+  <p><em>Example inside of a local project</em></p>
+
+  <br>
+
+  <h3>Buffer-local marks</h3>
+  <img src="screenshots/buffer.png" alt="Bookmark screenshot" width="600"/>
+  <p><em>Example using my <code>init.el</code></em></p>
 
 </div>
 
@@ -42,7 +48,7 @@ arrow.el provides seamless navigation across all layers with a unified interface
 
 ## Key system (new)
 
-Bookmark keys are 1 or 2 characters. Single-char keys (`a`–`z`, `1`–`9`) are the default and jump instantly on the first keypress. However, when two bookmarks share the same leading letter such as `magit` and `modes`, for example, you can assign them 2-character keys like `ma` and `mo` instead, and arrow waits for the second character before jumping.
+`arrow-core.el` now uses a flat prefix-tree, where bookmark keys can be **any length**. Type a combination of `a`–`z` and `0`–`9`, then press `RET` to confirm the key. You may want to use this when two bookmarks share the same leading letter such as `magit` and `modes`, for example, you can assign them 2-character keys like `ma` and `mo` respectively, arrow now waits for the second character before jumping.
 
 The instant-jump is **prefix-free**: `m` and `ma` cannot coexist.
 - If `m` is taken, arrow will block `ma`
@@ -90,10 +96,11 @@ Ensure you have `(elpaca-use-package-mode)`
 ### Configuration (defaults)
 
 ```elisp
+(setq arrow-max-key-length 2)  ;; maximum number of characters per bookmark
 (setq arrow-preview-context 0) ;; 0 lines above & below, 1 line above & below etc...
-(setq arrow-auto-promote nil) ;; auto rearranges list when key added or used
-(setq arrow-auto-sort nil)    ;; auto sort bookmarks by line number on add
-(setq arrow-visual-marker t) ;; displays visual marker on line number
+(setq arrow-auto-promote nil)  ;; auto rearranges list when key added or used
+(setq arrow-auto-sort nil)     ;; auto sort bookmarks by line number on add
+(setq arrow-visual-marker t)   ;; displays visual marker on line number
 (setq arrow-visual-marker-position 'left) ;; marker position(left or right)
 (setq arrow-project-modeline nil) ;; show modeline indicator for arrow-project
 

@@ -33,6 +33,10 @@
   :type 'directory
   :group 'arrow-core)
 
+(defcustom arrow-max-key-length 2
+  "Maximum number of characters allowed in a bookmark key."
+  :type '(choice (natnum :tag "Max length") (const :tag "No limit" nil))
+  :group 'arrow-core)
 
 ;; popup state
 (defvar arrow--popup-frame nil)
@@ -43,6 +47,17 @@
   "Face for highlighting bookmark keys in the popup."
   :group 'arrow-core)
 
+(defface arrow-legend-face
+  '((t (:inherit shadow :slant italic :height 0.9)))
+  "Face for the legend shown in the popup header-line."
+  :group 'arrow-core)
+
+(defvar arrow--shift-map
+  '((?! . ?1) (?@ . ?2) (?# . ?3) (?$ . ?4) (?% . ?5)
+    (?^ . ?6) (?& . ?7) (?* . ?8) (?\( . ?9) (?\) . ?0)
+    (?_ . ?-) (?+ . ?=) (?{ . ?\[) (?} . ?\]) (?| . ?\\)
+    (?: . ?\;) (?\" . ?') (?< . ?,) (?> . ?.) (?? . ?/))
+  "Map of shifted symbols to their base keys for `split-window' detection.")
 
 ;;; storage helpers
 
@@ -86,10 +101,32 @@ Automatically migrates legacy character keys to strings."
 
 ;;; key helpers
 
+(defun arrow--alnum-char-p (char)
+  "Return non-nil when CHAR is a lowercase letter or digit."
+  (and (characterp char)
+       (or (and (>= char ?a) (<= char ?z))
+           (and (>= char ?0) (<= char ?9)))))
+
+(defun arrow--return-event-p (event basic)
+  "Return non-nil when EVENT/BASIC represent Return."
+  (or (eq event ?\r) (eq event 'return)
+      (eq basic ?\r) (eq basic 'return)))
+
+(defun arrow--prompt-for-key (input prefix)
+  "Return the prompt string for INPUT and PREFIX."
+  (if (string-empty-p input)
+      prefix
+    (format "%s [%s…]: " prefix input)))
+
+(defun arrow--matching-prefixes (input alist)
+  "Return entries in ALIST whose key begins with INPUT."
+  (cl-remove-if-not (lambda (entry)
+                      (string-prefix-p input (car entry)))
+                    alist))
+
 (defun arrow--key-conflicts-p (new-key alist)
   "Return the conflicting key if NEW-KEY violates the prefix-free rule in ALIST.
-A conflict occurs when NEW-KEY is a prefix of an existing key or vice-versa.
-Returns the conflicting key string, or nil if there is no conflict."
+A conflict occurs when NEW-KEY is a prefix of an existing key or vice-versa."
   (catch 'conflict
     (dolist (entry alist)
       (let ((existing (car entry)))
@@ -101,8 +138,8 @@ Returns the conflicting key string, or nil if there is no conflict."
 (defun arrow--find-free-key-in (alist)
   "Find the next available bookmark key in ALIST as a string.
 Tries single characters (1-9 then a-z) first.  If every single char is
-either taken or blocked by an existing 2-char prefix, then fall back to
-2-character combinations (aa, ab, … zz)."
+either taken or blocked by an existing prefix, falls back to 2-character
+combinations (aa, ab, … zz), and so on up to `arrow-max-key-length'"
   (let* ((used-keys (mapcar #'car alist))
          (singles   (append
                      (mapcar #'char-to-string (number-sequence ?1 ?9))
@@ -115,63 +152,67 @@ either taken or blocked by an existing 2-char prefix, then fall back to
                  singles)
      ;; two-char fallback: aa, ab, … zz
      (catch 'found
-       (dolist (a (number-sequence ?a ?z))
-         (dolist (b (number-sequence ?a ?z))
-           (let ((k (string a b)))
-             (when (and (not (member k used-keys))
-                        (not (arrow--key-conflicts-p k alist)))
-               (throw 'found k)))))
-       (user-error "No free bookmark keys available")))))
-
-
-;;; interactive key-reading helpers
+       (let ((max-len (or arrow-max-key-length 2)))
+         (cl-loop for len from 2 to max-len do
+                  (let ((chars (number-sequence ?a ?z)))
+                    (cl-labels ((gen (prefix remaining)
+                                  (if (= remaining 0)
+                                      (when (and (not (member prefix used-keys))
+                                                 (not (arrow--key-conflicts-p prefix alist)))
+                                        (throw 'found prefix))
+                                    (dolist (c chars)
+                                      (gen (concat prefix (char-to-string c))
+                                           (1- remaining))))))
+                      (dolist (c chars)
+                        (gen (char-to-string c) (1- len)))))))
+       (user-error "No free bookmark keys available (max key length: %s)"
+                   (or arrow-max-key-length "∞"))))))
 
 (defun arrow--read-bookmark-key (prompt &optional allow-auto)
-  "Interactively read a 1-or-2 character bookmark key string.
-with PROMPT shown to the user.
-If ALLOW-AUTO is non-nil, pressing RET on the first character returns nil,
-signalling to auto-assign a key via `arrow--find-free-key-in'."
-  (let* ((event1 (read-key (format "%s (a-z/0-9%s): "
-                                   prompt
-                                   (if allow-auto ", RET=auto" ""))))
-         (char1  (event-basic-type event1)))
-    (cond
-     ;; abort
-     ((eq event1 ?\C-g)
-      (keyboard-quit))
-     ;; auto-assign requested
-     ((and allow-auto (eq char1 ?\r))
-      nil)
-     ;; if invalid first character
-     ((not (and (characterp char1)
-                (or (and (>= char1 ?a) (<= char1 ?z))
-                    (and (>= char1 ?0) (<= char1 ?9)))))
-      (user-error "Please use a letter (a-z) or number (0-9)%s"
-                  (if allow-auto ", or RET for auto" "")))
-     (t
-      ;; if valid first char -> offer second char or RET to confirm
-      (let* ((s1     (char-to-string char1))
-             (event2 (read-key
-                      (format "[%s]: another a-z/0-9 for 2-char key or RET to confirm [%s]: "
-                              s1 s1)))
-             (char2  (event-basic-type event2)))
-        (cond
-         ((eq event2 ?\C-g)  (keyboard-quit))
-         ;; single-char key confirmed
-         ((eq char2  ?\r)    s1)
-         ;; valid second char -> 2-char key
-         ((and (characterp char2)
-               (or (and (>= char2 ?a) (<= char2 ?z))
-                   (and (>= char2 ?0) (<= char2 ?9))))
-          (concat s1 (char-to-string char2)))
-         (t
-          (user-error "Second character must be a letter (a-z) or number (0-9)"))))))))
+  "Interactively read a bookmark PROMPT of any length.
+Valid characters are a-z and 0-9.  Press RET to confirm the key.
+If ALLOW-AUTO is non-nil and RET is pressed without typing anything,
+return nil to signal auto-assignment via `arrow--find-free-key-in'."
+  (let ((input ""))
+    (catch 'done
+      (while t
+        (let* ((ev   (read-key (if (string-empty-p input)
+                                   (format "%s (a-z/0-9%s): "
+                                           prompt
+                                           (if allow-auto ", RET=auto" ""))
+                                 (format "Key [%s] (RET confirms, C-g aborts): " input))))
+               (base (event-basic-type ev)))
+          (cond
+           ((eq ev ?\C-g) ; abort
+            (keyboard-quit))
+           ;; RET pressed check both raw event and basic type
+           ;; to cover terminal vs GUI differences
+           ((arrow--return-event-p ev base)
+            (if (string-empty-p input)
+                (if allow-auto
+                    (throw 'done nil)     ; empty RET: signal auto-assign
+                  (user-error "Please use a letter (a-z) or number (0-9)"))
+              (throw 'done input)))       ; confirm accumulated string
+
+           ((arrow--alnum-char-p base) ; valid alphanumeric
+            (setq input (concat input (char-to-string base)))
+            ;; auto-submit when max length is reached (no RET needed)
+            (when (and arrow-max-key-length
+                       (>= (length input) arrow-max-key-length))
+              (throw 'done input)))
+
+           ;; anything else
+           (t
+            (user-error "Please use a letter (a-z) or number (0-9)%s"
+                        (if (and allow-auto (string-empty-p input))
+                            ", or RET for auto"
+                          "")))))))))
 
 (defun arrow--read-existing-key (prompt alist)
-  "Read a bookmark key that exists in ALIST, dealing with 1-or-2 char.
+  "Read a bookmark key that exists in ALIST.
 Shows PROMPT then waits for keypress.
 If the first character is an exact match, return it immediately.
-If it is a prefix of 2-char keys, prompt for a second character."
+otherwise keey prompting until RET confirms the full key."
   (let* ((event1 (read-key prompt))
          (char1  (event-basic-type event1)))
     (when (eq event1 ?\C-g) (keyboard-quit))
@@ -179,27 +220,44 @@ If it is a prefix of 2-char keys, prompt for a second character."
       (user-error "Invalid key"))
     (let* ((s1          (char-to-string char1))
            (exact       (assoc s1 alist))
-           (prefix-hits (cl-remove-if-not
-                         (lambda (e) (string-prefix-p s1 (car e)))
-                         alist)))
+           (prefix-hits (arrow--matching-prefixes s1 alist)))
       (cond
-       ;; immediate exact match
+       ;; immediate exact match jump/delete right away
        (exact s1)
-       ;; first char is prefix of 2-char keys so wait for second char
-       (prefix-hits
-        (let* ((event2 (read-key (format "[%s…]: " s1)))
-               (char2  (event-basic-type event2)))
-          (cond
-           ((eq event2 ?\C-g) (keyboard-quit))
-           ((eq char2  ?\r)   (user-error "Cancelled"))
-           (t
-            (let ((combined (concat s1 (char-to-string char2))))
-              (if (assoc combined alist)
-                  combined
-                (user-error "No bookmark for key: %s" combined)))))))
        ;; no match at all
-       (t (user-error "No bookmark for key: %s" s1))))))
-
+       ((null prefix-hits)
+        (user-error "No bookmark for key: %s" s1))
+       ;; prefix matches: read more chars until RET confirms
+       (t
+        (catch 'done
+          (let ((input s1))
+            (while t
+              (let* ((event (read-key (format "[%s…] (RET confirms, C-g aborts): " input)))
+                     (char (event-basic-type event)))
+                (cond
+                 ((eq event ?\C-g)
+                  (keyboard-quit))
+                 ;; RET confirms check both raw event and basic type for GUI/terminal
+                 ((arrow--return-event-p event char)
+                  (if (assoc input alist)
+                      (throw 'done input)
+                    (user-error "No bookmark for key: %s" input)))
+                 ;; accumulate valid a-z/0-9
+                 ((arrow--alnum-char-p char)
+                  (setq input (concat input (char-to-string char)))
+                  ;; bail early if this matches nothing and isn't a prefix
+                  (unless (or (assoc input alist)
+                              (cl-some (lambda (e) (string-prefix-p input (car e))) alist))
+                    (user-error "No bookmark for key: %s" input))
+                  ;; auto-submit when max length is reached
+                  (when (and arrow-max-key-length
+                             (>= (length input) arrow-max-key-length))
+                    (if (assoc input alist)
+                        (throw 'done input)
+                      (user-error "No bookmark for key: %s" input))))
+                 ;; anything else
+                 (t
+                  (user-error "Invalid key"))))))))))))
 
 ;;; popup display helpers
 
@@ -249,73 +307,67 @@ If it is a prefix of 2-char keys, prompt for a second character."
     (make-frame-visible frame)
     (setq arrow--popup-frame frame)))
 
-(defvar arrow--shift-map
-  '((?! . ?1) (?@ . ?2) (?# . ?3) (?$ . ?4) (?% . ?5)
-    (?^ . ?6) (?& . ?7) (?* . ?8) (?\( . ?9) (?\) . ?0)
-    (?_ . ?-) (?+ . ?=) (?{ . ?\[) (?} . ?\]) (?| . ?\\)
-    (?: . ?\;) (?\" . ?') (?< . ?,) (?> . ?.) (?? . ?/))
-  "Map of shifted symbols to their base keys for split-window detection.")
+(defun arrow--display-popup-buffer (buf)
+  "Display BUF in the current popup presentation."
+  (if (display-graphic-p)
+      (arrow--display-child-frame buf)
+    (setq arrow--popup-window
+          (display-buffer buf '((display-buffer-at-bottom)
+                                (window-height . fit-window-to-buffer)))))
+  (redisplay t))
 
-(defface arrow-legend-face
-  '((t (:inherit shadow :slant italic :height 0.9)))
-  "Face for the legend shown in the popup header-line."
-  :group 'arrow-core)
+(defun arrow--popup-header-line (title legend)
+  "Build the header line for TITLE and LEGEND."
+  (concat
+   (propertize (format " %s " title) 'face 'bold)
+   (propertize legend 'face 'arrow-legend-face)))
 
+(defun arrow--popup-render (buf title legend lines)
+  "Render TITLE and LINES into BUF and refresh the popup viewport."
+  (with-current-buffer buf
+    (erase-buffer)
+    (setq header-line-format
+          (arrow--popup-header-line title legend))
+    (setq mode-line-format               nil
+          cursor-type                    nil
+          cursor-in-non-selected-windows nil
+          truncate-lines                 t)
+    (insert (string-join lines "\n"))
+    (goto-char (point-min)))
+  (cond
+   ((frame-live-p arrow--popup-frame)
+    (set-window-start (frame-root-window arrow--popup-frame)
+                      (with-current-buffer buf (point-min))))
+   ((window-live-p arrow--popup-window)
+    (set-window-start arrow--popup-window
+                      (with-current-buffer buf (point-min)))))
+  (redisplay t))
 
 ;;; dynamic popup 1-or-2 char input with live filtering
 
 (defun arrow--show-popup (title alist format-fn)
   "Popup with TITLE, ALIST of (key . value) pairs, and FORMAT-FN.
 FORMAT-FN is called as (FORMAT-FN key value) for each entry.
-Where keys in ALIST must be strings (1 or 2 characters).
-The input loop supports instant jumping with no RET confirmation:
-  - After the first keystroke the popup is filtered to show only entries
-    that start with the typed character (or instant jump on match)
-  - Window split Modifiers are captured on the first keypress:
-Returns (SELECTION . MODIFIERS) where SELECTION is the matching alist entry
-cons cell, or nil if the user cancelled or no match was found."
+After the first keystroke the popup is filtered to show only entries
+that start with the typed character (or instant jump on match)"
   (unless alist (user-error "No bookmarks to display"))
   (let ((buf    (get-buffer-create " *arrow-popup*"))
         (result nil))
 
-    ;; render helper
-    ;; Re-fill the BUF with CURRENT-ALIST and refreshes the popup display
+    ;; re-fill the BUF with CURRENT-ALIST and refreshes the popup display
     (cl-labels
         ((render (current-alist)
-           (with-current-buffer buf
-             (erase-buffer)
-             (setq header-line-format
-                   (concat
-                    (propertize (format " %s " title) 'face 'bold)
-                    (propertize " [Key] Jump | [C-Key] Split─ | [S-Key] Split│ | [q] Quit"
-                                'face 'arrow-legend-face)))
-             (setq mode-line-format               nil
-                   cursor-type                    nil
-                   cursor-in-non-selected-windows nil
-                   truncate-lines                 t)
-             (insert (string-join
-                      (mapcar (lambda (bm)
-                                (funcall format-fn (car bm) (cdr bm)))
-                              current-alist)
-                      "\n"))
-             (goto-char (point-min)))
-           (cond
-            ((frame-live-p arrow--popup-frame)
-             (set-window-start (frame-root-window arrow--popup-frame)
-                               (with-current-buffer buf (point-min))))
-            ((window-live-p arrow--popup-window)
-             (set-window-start arrow--popup-window
-                               (with-current-buffer buf (point-min)))))
-           (redisplay t)))
+           (arrow--popup-render
+            buf
+            title
+            " [Key] Jump | [C-Key] Split─ | [S-Key] Split│ | [q] Quit"
+            (mapcar (lambda (bm)
+                      (funcall format-fn (car bm) (cdr bm)))
+                    current-alist))))
 
       ;; initial render display
       (render alist)
-      (if (display-graphic-p)
-          (arrow--display-child-frame buf)
-        (setq arrow--popup-window
-              (display-buffer buf '((display-buffer-at-bottom)
-                                    (window-height . fit-window-to-buffer)))))
-      (redisplay t)
+      (arrow--display-popup-buffer buf)
 
       ;; input loop
       (unwind-protect
@@ -323,9 +375,7 @@ cons cell, or nil if the user cancelled or no match was found."
                 (first-mods   nil)
                 (done         nil))
             (while (not done)
-              (let* ((prompt     (if (string-empty-p input-string)
-                                     "Select: "
-                                   (format "Select [%s…]: " input-string)))
+              (let* ((prompt     (arrow--prompt-for-key input-string "Select: "))
                      (event      (read-key prompt))
                      (raw-key    (event-basic-type event))
                      (mods       (event-modifiers event))
@@ -355,10 +405,7 @@ cons cell, or nil if the user cancelled or no match was found."
                   (let* ((new-input   (concat input-string
                                               (char-to-string base-key)))
                          (exact       (assoc new-input alist))
-                         (prefix-hits (cl-remove-if-not
-                                       (lambda (e)
-                                         (string-prefix-p new-input (car e)))
-                                       alist)))
+                         (prefix-hits (arrow--matching-prefixes new-input alist)))
                     (setq input-string new-input)
                     (cond
                      ;; exact match: jump immediately
@@ -371,13 +418,14 @@ cons cell, or nil if the user cancelled or no match was found."
                       (message "No bookmark for key: %s" input-string)
                       (setq done t))
 
-                     ;; prefix matches on first char: filter popup and wait
-                     ((= (length input-string) 1)
-                      (render prefix-hits))
-                     ;; 2 chars typed with no exact match: abort
+                     ;; prefix matches: keep filtering and wait for more input
                      (t
-                      (message "No bookmark for key: %s" input-string)
-                      (setq done t)))))
+                      (when (and arrow-max-key-length
+                                 (>= (length input-string) arrow-max-key-length))
+                        ;; at max length with only prefix hits and no exact: abort
+                        (message "No bookmark for key: %s" input-string)
+                        (setq done t))
+                      (unless done (render prefix-hits))))))
 
                  ;; also abort on non-character (F-keys, etc)
                  (t
@@ -415,48 +463,30 @@ SELECTED-KEY is the bookmark being moved (nil in step 1)."
   (unless alist (user-error "No bookmarks to reorder"))
   (let ((buf (get-buffer-create " *arrow-popup*")))
 
-    (with-current-buffer buf
-      (erase-buffer)
-      (setq header-line-format
-            (concat
-             (propertize (format " %s " title) 'face 'bold)
-             (propertize
-              (if selected-key
-                  (format " Moving [%s]: insert BEFORE which? (same key = end) | [q] Cancel"
-                          selected-key)
-                " [Key] Select bookmark to MOVE | [q] Quit")
-              'face 'arrow-legend-face)))
-      (setq mode-line-format               nil
-            cursor-type                    nil
-            cursor-in-non-selected-windows nil
-            truncate-lines                 t)
-      (insert (string-join
-               (mapcar (lambda (bm)
-                         (let* ((is-sel (and selected-key
-                                             (equal (car bm) selected-key)))
-                                (line   (funcall format-fn (car bm) (cdr bm))))
-                           (if is-sel
-                               (propertize line 'face '(:weight bold :underline t))
-                             line)))
-                       alist)
-               "\n"))
-      (goto-char (point-min)))
+    (arrow--popup-render
+     buf
+     title
+     (if selected-key
+         (format " Moving [%s]: insert BEFORE which? (same key = end) | [q] Cancel"
+                 selected-key)
+       " [Key] Select bookmark to MOVE | [q] Quit")
+     (mapcar (lambda (bm)
+               (let* ((is-sel (and selected-key
+                                   (equal (car bm) selected-key)))
+                      (line   (funcall format-fn (car bm) (cdr bm))))
+                 (if is-sel
+                     (propertize line 'face '(:weight bold :underline t))
+                   line)))
+             alist))
 
-    (if (display-graphic-p)
-        (arrow--display-child-frame buf)
-      (setq arrow--popup-window
-            (display-buffer buf '((display-buffer-at-bottom)
-                                  (window-height . fit-window-to-buffer)))))
-    (redisplay t)
+    (arrow--display-popup-buffer buf)
 
     (unwind-protect
         (let ((input-string "")
               (done         nil)
               (result       nil))
           (while (not done)
-            (let* ((prompt  (if (string-empty-p input-string)
-                                "Select: "
-                              (format "Select [%s…]: " input-string)))
+            (let* ((prompt  (arrow--prompt-for-key input-string "Select: "))
                    (event   (read-key prompt))
                    (raw-key (event-basic-type event)))
               (cond
@@ -468,10 +498,7 @@ SELECTED-KEY is the bookmark being moved (nil in step 1)."
                 (let* ((new-input   (concat input-string
                                             (char-to-string raw-key)))
                        (exact       (assoc new-input alist))
-                       (prefix-hits (cl-remove-if-not
-                                     (lambda (e)
-                                       (string-prefix-p new-input (car e)))
-                                     alist)))
+                       (prefix-hits (arrow--matching-prefixes new-input alist)))
                   (setq input-string new-input)
                   (cond
                    (exact
@@ -480,11 +507,13 @@ SELECTED-KEY is the bookmark being moved (nil in step 1)."
                    ((null prefix-hits)
                     (message "No bookmark for key: %s" input-string)
                     (setq done t))
-                   ;; still 1 char with prefix matches: wait for next char
-                   ((= (length input-string) 1) nil)
-                   (t
+                   ;; at max length with only prefix hits and no exact: abort
+                   ((and arrow-max-key-length
+                         (>= (length input-string) arrow-max-key-length))
                     (message "No bookmark for key: %s" input-string)
-                    (setq done t)))))
+                    (setq done t))
+                   ;; prefix matches: wait for next char
+                   (t nil))))
 
                (t
                 (message "Invalid key.")
