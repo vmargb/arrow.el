@@ -233,8 +233,8 @@ The result is cached buffer-locally and only recomputed when alist changes."
                  (entry (rassoc rel alist))
                  (str   (when entry
                           (propertize
-                           (format " %s[%s] "
-                                   arrow-project-modeline-glyph
+                           (format " %s%s "
+                                   (arrow--modeline-glyph)
                                    (car entry))
                            'face 'arrow-bookmark-face))))
             (setq arrow-project--modeline-cache (cons alist str))

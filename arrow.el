@@ -21,10 +21,12 @@
 (require 'arrow-project)
 (require 'arrow-org)
 
-(defgroup arrow nil
-  "File-local bookmarks with transient popups."
-  :group 'convenience)
+;; silence byte-compiler if nerd-icons isn't loaded at compile time
+(declare-function nerd-icons-mdicon "nerd-icons" (icon &rest args))
 
+(defgroup arrow nil
+  "File-local bookmarks with transient-like popups."
+  :group 'convenience)
 
 ;; custom options:
 
@@ -63,17 +65,46 @@
   :type 'boolean
   :group 'arrow)
 
-(defcustom arrow-project-modeline-glyph "➶ "
-  "Glyph used for the modeline indicator.  '󱋱 ', '󰁕 ', '➶ '."
+;; --------------------------------------------------------------
+;; Nerd-Icons Modeline Integration
+;; --------------------------------------------------------------
+(defcustom arrow-modeline-use-nerd-icons t
+  "If non-nil, use `nerd-icons' for the modeline indicator."
+  :type 'boolean
+  :group 'arrow)
+
+(defcustom arrow-modeline-nerd-icon-family "mdicon"
+  "Nerd-icon family to use for the modeline glyph."
   :type 'string
   :group 'arrow)
+
+(defcustom arrow-modeline-nerd-icon-name "nf-md-bow_arrow"
+  "Nerd Icons glyph name for the modeline indicator.
+Arrow/Bow/Crossbow suggestions:
+- \"nf-md-bow_arrow\"
+- \"nf-md-crossbow\"
+- \"nf-md-arrow_right_bold\"
+- \"nf-cod-arrow_right\"
+- \"nf-fa-bullseye\""
+  :type 'string
+  :group 'arrow)
+
+(defun arrow--modeline-glyph ()
+  "Return the modeline glyph, using `nerd-icons' if available and enabled.
+Otherwise fallback to available glyphs."
+  (if (and arrow-modeline-use-nerd-icons
+           (featurep 'nerd-icons))
+      (let ((icon-fn (intern (format "nerd-icons-%s" arrow-modeline-nerd-icon-family))))
+        (if (fboundp icon-fn)
+            (concat (funcall icon-fn arrow-modeline-nerd-icon-name :face 'arrow-bookmark-face) " ")
+          "➶ "))
+    "➶ "))
 
 (defcustom arrow-preview-context 0
   "Number of context lines shown above and below each bookmark in the popup.
 Set to 0 (default) for the classic single-line preview."
   :type 'natnum
   :group 'arrow)
-
 
 ;; Visual overlay
 
@@ -117,7 +148,6 @@ Set to 0 (default) for the classic single-line preview."
   (dolist (entry arrow-alist)
     (arrow--place-indicator (car entry) (cdr entry))))
 
-
 ;;; buffer-local persistence
 
 (defun arrow--save-to-file ()
@@ -145,7 +175,6 @@ Set to 0 (default) for the classic single-line preview."
           (push (cons (car item) marker) arrow-alist))))
     (when arrow-visual-marker
       (arrow--refresh-indicators))))
-
 
 ;;; promote / sort
 
@@ -183,7 +212,6 @@ Useful as a manual one-shot command when `arrow-auto-sort' is disabled."
   (arrow--sort-by-position)
   (when arrow-visual-marker (arrow--refresh-indicators))
   (message "Buffer bookmarks sorted by line number."))
-
 
 ;;; add / delete / jump
 
@@ -248,7 +276,6 @@ a 2-character key.  On the first prompt RET auto-assigns the next free key."
       (switch-to-buffer (marker-buffer marker))
       (goto-char marker))))
 
-
 ;;; reorder
 
 (defun arrow-reorder ()
@@ -268,7 +295,6 @@ it before (same key = move to end)."
     (when arrow-visual-marker (arrow--refresh-indicators))
     (message "Moved bookmark [%s]." source-key)))
 
-
 ;;; unified dispatcher
 
 (defun arrow-jump ()
@@ -287,7 +313,6 @@ it before (same key = move to end)."
       (?p (arrow-project-show))
       (?g (arrow-global-show))
       (?o (arrow-org-list-project-notes)))))
-
 
 ;;; display and jump logic
 
@@ -374,7 +399,6 @@ Context lines per entry controlled by `arrow-preview-context'."
         (switch-to-buffer (marker-buffer jump-marker))
         (goto-char jump-marker)))))
 
-
 ;;; buffer-local cycling
 
 (defun arrow--get-sorted-alist ()
@@ -407,7 +431,6 @@ Context lines per entry controlled by `arrow-preview-context'."
                    (car sorted))))  ; wrap to end
     (goto-char (cdr target))
     (message "Local bookmark: [%s]" (car target))))
-
 
 ;;; minor mode
 
