@@ -80,12 +80,11 @@
 
 (defcustom arrow-modeline-nerd-icon-name "nf-md-bow_arrow"
   "Nerd Icons glyph name for the modeline indicator.
-Arrow/Bow/Crossbow suggestions:
-- \"nf-md-bow_arrow\"
-- \"nf-md-crossbow\"
-- \"nf-md-arrow_right_bold\"
-- \"nf-cod-arrow_right\"
-- \"nf-fa-bullseye\""
+\"nf-md-bow_arrow\"
+\"nf-md-crossbow\"
+\"nf-md-arrow_right_bold\"
+\"nf-cod-arrow_right\"
+\"nf-fa-bullseye\""
   :type 'string
   :group 'arrow)
 

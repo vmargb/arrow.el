@@ -93,10 +93,12 @@ confirm a single-character key, or press a second letter/digit to create a
 
 ;;;###autoload
 (defun arrow-global-clear-all ()
-  "Delete all global bookmarks after confirmation."
+  "Clear all global bookmarks after confirmation."
   (interactive)
   (when (y-or-n-p "Clear all global bookmarks? ")
-    (arrow-global--save nil)
+    (setq arrow-global--cache nil)
+    (when (file-exists-p arrow-global-file)
+      (delete-file arrow-global-file))
     (message "Cleared all global bookmarks.")))
 
 ;;;###autoload

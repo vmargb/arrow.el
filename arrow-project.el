@@ -105,6 +105,18 @@ RET to confirm a 1-char key, or a second letter/digit for a 2-char key."
       (message "Deleted project bookmark [%s]" key))))
 
 ;;;###autoload
+(defun arrow-project-clear-all ()
+  "Clear all project bookmarks for the current project."
+  (interactive)
+  (let* ((root      (arrow-project--root))
+         (proj-name (file-name-nondirectory (directory-file-name root))))
+    (when (y-or-n-p (format "Clear all bookmarks for project '%s'? " proj-name))
+      (remhash root arrow-project-cache)
+      (let ((file (arrow-project--file root)))
+        (when (file-exists-p file) (delete-file file)))
+      (message "Cleared all project bookmarks for %s." proj-name))))
+
+;;;###autoload
 (defun arrow-project-jump ()
   "Jump directly to a project bookmark without a menu."
   (interactive)
