@@ -265,7 +265,10 @@ otherwise keey prompting until RET confirms the full key."
   "Close the popup window/frame."
   (when (frame-live-p arrow--popup-frame)
     (delete-frame arrow--popup-frame)
-    (setq arrow--popup-frame nil))
+    (setq arrow--popup-frame nil)
+    ;; re-run after-make-frame-functions on the parent frame
+    (when (display-graphic-p)
+      (run-hook-with-args 'after-make-frame-functions (selected-frame))))
   (when (window-live-p arrow--popup-window)
     (delete-window arrow--popup-window)
     (setq arrow--popup-window nil)))
@@ -286,20 +289,27 @@ otherwise keey prompting until RET confirms the full key."
          (left        (/ (- (frame-pixel-width  parent) px-width)  2))
          ;; clamp top, never go above the parent frame's top edge
          (top         (max 0 (/ (- (frame-pixel-height parent) px-height) 2)))
-         (frame       (make-frame
-                       `((parent-frame          . ,parent)
-                         (minibuffer            . nil)
-                         (undecorated           . t)
-                         (internal-border-width . 3)
-                         (tab-bar-lines         . 0) ;; supress tab-bar
-                         (tool-bar-lines        . 0) ;; suppress tool-bar
-                         (menu-bar-lines        . 0) ;; suppress menu-bar
-                         (background-color      . ,(face-background 'tooltip nil t))
-                         (width                 . ,width-chars)
-                         (height                . ,lines)
-                         (left                  . ,left)
-                         (top                   . ,top)
-                         (no-accept-focus       . t)))))
+         ;; suppress after-make-frame-functions for this transient frame
+         ;; packages such as highlight-indent-guides register a hook there
+         ;; that recomputes guide-face colours from the new frames background
+         ;; because the popup uses the tooltip background (a different shade),
+         ;; those faces end up globally overwritten with the wrong colours and
+         ;; stay broken after the popup closes.
+         (frame       (let ((after-make-frame-functions nil))
+                        (make-frame
+                         `((parent-frame          . ,parent)
+                           (minibuffer            . nil)
+                           (undecorated           . t)
+                           (internal-border-width . 3)
+                           (tab-bar-lines         . 0) ;; suppress tab-bar
+                           (tool-bar-lines        . 0) ;; suppress tool-bar
+                           (menu-bar-lines        . 0) ;; suppress menu-bar
+                           (background-color      . ,(face-background 'tooltip nil t))
+                           (width                 . ,width-chars)
+                           (height                . ,lines)
+                           (left                  . ,left)
+                           (top                   . ,top)
+                           (no-accept-focus       . t))))))
     (set-window-buffer (frame-root-window frame) buf)
     (set-window-start  (frame-root-window frame)
                        (with-current-buffer buf (point-min)))
