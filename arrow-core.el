@@ -273,10 +273,10 @@ otherwise keey prompting until RET confirms the full key."
     (delete-window arrow--popup-window)
     (setq arrow--popup-window nil)))
 
-(defun arrow--display-child-frame (buf)
-  "Display BUF in a centered child frame (GUI only)."
-  (let* ((parent      (selected-frame))
-         (char-width  (or (frame-char-width  parent)  10))
+(defun arrow--popup-frame-geometry (buf parent)
+  "Compute child-frame geometry for displaying BUF over PARENT.
+Returns a plist (:width-chars W :lines L :left LEFT :top TOP)."
+  (let* ((char-width  (or (frame-char-width  parent)  10))
          (char-height (or (frame-char-height parent) 20))
          (width-chars 75)
          (px-width    (* width-chars char-width))
@@ -288,34 +288,54 @@ otherwise keey prompting until RET confirms the full key."
          (px-height   (* lines char-height))
          (left        (/ (- (frame-pixel-width  parent) px-width)  2))
          ;; clamp top, never go above the parent frame's top edge
-         (top         (max 0 (/ (- (frame-pixel-height parent) px-height) 2)))
+         (top         (max 0 (/ (- (frame-pixel-height parent) px-height) 2))))
+    (list :width-chars width-chars :lines lines :left left :top top)))
+
+(defun arrow--display-child-frame (buf)
+  "Display BUF in a centered child frame (GUI only)."
+  (let* ((parent (selected-frame))
+         (geo    (arrow--popup-frame-geometry buf parent))
          ;; suppress after-make-frame-functions for this transient frame
          ;; packages such as highlight-indent-guides register a hook there
          ;; that recomputes guide-face colours from the new frames background
          ;; because the popup uses the tooltip background (a different shade),
          ;; those faces end up globally overwritten with the wrong colours and
          ;; stay broken after the popup closes.
-         (frame       (let ((after-make-frame-functions nil))
-                        (make-frame
-                         `((parent-frame          . ,parent)
-                           (minibuffer            . nil)
-                           (undecorated           . t)
-                           (internal-border-width . 3)
-                           (tab-bar-lines         . 0) ;; suppress tab-bar
-                           (tool-bar-lines        . 0) ;; suppress tool-bar
-                           (menu-bar-lines        . 0) ;; suppress menu-bar
-                           (background-color      . ,(face-background 'tooltip nil t))
-                           (width                 . ,width-chars)
-                           (height                . ,lines)
-                           (left                  . ,left)
-                           (top                   . ,top)
-                           (no-accept-focus       . t))))))
+         (frame  (let ((after-make-frame-functions nil))
+                   (make-frame
+                    `((parent-frame          . ,parent)
+                      (minibuffer            . nil)
+                      (undecorated           . t)
+                      (internal-border-width . 3)
+                      (tab-bar-lines         . 0) ;; suppress tab-bar
+                      (tool-bar-lines        . 0) ;; suppress tool-bar
+                      (menu-bar-lines        . 0) ;; suppress menu-bar
+                      (background-color      . ,(face-background 'tooltip nil t))
+                      ;; geometry per group for different set of marks
+                      (width                 . ,(plist-get geo :width-chars))
+                      (height                . ,(plist-get geo :lines))
+                      (left                  . ,(plist-get geo :left))
+                      (top                   . ,(plist-get geo :top))
+                      (no-accept-focus       . t))))))
     (set-window-buffer (frame-root-window frame) buf)
     (set-window-start  (frame-root-window frame)
                        (with-current-buffer buf (point-min)))
     (set-window-dedicated-p (frame-root-window frame) t)
     (make-frame-visible frame)
     (setq arrow--popup-frame frame)))
+
+(defun arrow--resize-child-frame (buf)
+  "Resize and re-center the popup child frame to fit BUF's content.
+Used when a popup is re-rendered with different content after it was
+first shown, like switching sections in `arrow--show-multi-popup', or
+narrowing by prefix."
+  (when (frame-live-p arrow--popup-frame)
+    (let* ((parent (or (frame-parent arrow--popup-frame) (selected-frame)))
+           (geo    (arrow--popup-frame-geometry buf parent)))
+      (set-frame-height arrow--popup-frame (plist-get geo :lines))
+      (set-frame-position arrow--popup-frame
+                          (plist-get geo :left)
+                          (plist-get geo :top)))))
 
 (defun arrow--display-popup-buffer (buf)
   "Display BUF in the current popup presentation."
@@ -333,7 +353,8 @@ otherwise keey prompting until RET confirms the full key."
    (propertize legend 'face 'arrow-legend-face)))
 
 (defun arrow--popup-render (buf title legend lines)
-  "Render TITLE and LINES into BUF and refresh the popup viewport."
+  "Render TITLE and LINES into BUF and refresh the popup viewport.
+Also re-renders the displayed popup frame to fit the new content"
   (with-current-buffer buf
     (erase-buffer)
     (setq header-line-format
@@ -346,9 +367,11 @@ otherwise keey prompting until RET confirms the full key."
     (goto-char (point-min)))
   (cond
    ((frame-live-p arrow--popup-frame)
+    (arrow--resize-child-frame buf)
     (set-window-start (frame-root-window arrow--popup-frame)
                       (with-current-buffer buf (point-min))))
    ((window-live-p arrow--popup-window)
+    (fit-window-to-buffer arrow--popup-window)
     (set-window-start arrow--popup-window
                       (with-current-buffer buf (point-min)))))
   (redisplay t))
@@ -429,6 +452,126 @@ that start with the typed character (or instant jump on match)"
                       (setq done t))
 
                      ;; prefix matches: keep filtering and wait for more input
+                     (t
+                      (when (and arrow-max-key-length
+                                 (>= (length input-string) arrow-max-key-length))
+                        ;; at max length with only prefix hits and no exact: abort
+                        (message "No bookmark for key: %s" input-string)
+                        (setq done t))
+                      (unless done (render prefix-hits))))))
+
+                 ;; also abort on non-character (F-keys, etc)
+                 (t
+                  (message "Invalid key.")
+                  (setq done t))))))
+        (arrow-close-popup)))
+    result))
+
+;; =======================================================
+;; unified multi-section popup (Tab/S-Tab cycle)
+
+(defun arrow--multi-popup-tab-strip (sections idx)
+  "Build a header tab-strip for SECTIONS with the section at IDX active."
+  (string-join
+   (cl-loop for section in sections
+            for i from 0
+            collect (let ((title (plist-get section :title)))
+                      (if (= i idx)
+                          (propertize (format "[%s]" title)
+                                      'face '(:weight bold :underline t))
+                        (propertize title 'face 'arrow-legend-face))))
+   " "))
+
+;; returns a plist (:section SECTION :selection (KEY . VALUE) :mods MODS)
+(defun arrow--show-multi-popup (sections)
+  "Tab-cycling popup over SECTIONS.
+Each element of SECTIONS is a plist with :title, :alist, and :format-fn,
+switching to a section scopes to the active sections alist."
+  (unless sections (user-error "No bookmarks to display"))
+  (let* ((buf    (get-buffer-create " *arrow-popup*"))
+         (n      (length sections))
+         (idx    0)
+         (result nil))
+
+    (cl-labels
+        ((current-section () (nth idx sections))
+         (render (entries)
+           (arrow--popup-render
+            buf
+            (arrow--multi-popup-tab-strip sections idx)
+            " [Key] Jump | [Tab] Section | [C/S-Key] Split | [q] Quit"
+            (mapcar (lambda (bm)
+                      (funcall (plist-get (current-section) :format-fn)
+                               (car bm) (cdr bm)))
+                    entries))))
+
+      (render (plist-get (current-section) :alist))
+      (arrow--display-popup-buffer buf)
+
+      (unwind-protect
+          (let ((input-string "")
+                (first-mods   nil)
+                (done         nil))
+            (while (not done)
+              (let* ((alist      (plist-get (current-section) :alist))
+                     (prompt     (arrow--prompt-for-key input-string "Select: "))
+                     (event      (read-key prompt))
+                     (raw-key    (event-basic-type event))
+                     (mods       (event-modifiers event))
+                     ;; uppercase A-Z: shift + lowercase equivalent
+                     (is-upper   (and (characterp raw-key)
+                                      (not (eq raw-key (downcase raw-key)))))
+                     ;; shifted symbol !@#…: base digit/punctuation
+                     (shifted    (alist-get raw-key arrow--shift-map))
+                     ;; normalised base key used for alist lookup
+                     (base-key   (cond (is-upper (downcase raw-key))
+                                       (shifted  shifted)
+                                       (t        raw-key)))
+                     (combo-mods (append mods
+                                         (when (or is-upper shifted) '(shift)))))
+
+                ;; record split modifiers from the first keypress only
+                (when (string-empty-p input-string)
+                  (setq first-mods combo-mods))
+
+                (cond
+                 ((or (eq event ?\C-g) (eq event ?q)) ; quit
+                  (message "Cancelled.")
+                  (setq done t))
+
+                 ;; next section: reset input and re-render that sections full list
+                 ((memq event '(tab ?\t))
+                  (setq idx (mod (1+ idx) n))
+                  (setq input-string "")
+                  (render (plist-get (current-section) :alist)))
+
+                 ;; previous section
+                 ((memq event '(backtab S-tab))
+                  (setq idx (mod (1- idx) n))
+                  (setq input-string "")
+                  (render (plist-get (current-section) :alist)))
+
+                 ;; printable character
+                 ((characterp base-key)
+                  (let* ((new-input   (concat input-string
+                                              (char-to-string base-key)))
+                         (exact       (assoc new-input alist))
+                         (prefix-hits (arrow--matching-prefixes new-input alist)))
+                    (setq input-string new-input)
+                    (cond
+                     ;; exact match jump immediately
+                     (exact
+                      (setq result (list :section   (current-section)
+                                         :selection exact
+                                         :mods      first-mods))
+                      (setq done t))
+
+                     ;; abort if nothing matches
+                     ((null prefix-hits)
+                      (message "No bookmark for key: %s" input-string)
+                      (setq done t))
+
+                     ;; prefix matches so keep filtering and wait for more input
                      (t
                       (when (and arrow-max-key-length
                                  (>= (length input-string) arrow-max-key-length))

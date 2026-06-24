@@ -296,22 +296,42 @@ it before (same key = move to end)."
 
 ;;; unified dispatcher
 
-(defun arrow-jump ()
-  "Unified dispatcher for jumping to a buffer, project, or global bookmark."
+(defun arrow-show-all ()
+  "Unified popup with Buffer, Project, and Global bookmarks together.
+keys behave exactly as they do in that layers own `-show' command
+Sections with no bookmarks (e.g. project when not inside a project) are omitted."
   (interactive)
-  (let* ((b-str (propertize "[b]" 'face '(:inherit font-lock-keyword-face :weight bold)))
-         (p-str (propertize "[p]" 'face '(:inherit font-lock-type-face     :weight bold)))
-         (g-str (propertize "[g]" 'face '(:inherit success                 :weight bold)))
-         (o-str (propertize "[o]" 'face '(:inherit warning                 :weight bold)))
-         (choice (read-char-choice
-                  (format "%suffer, %sroject, %slobal, %srg: "
-                          b-str p-str g-str o-str)
-                  '(?b ?p ?g ?o))))
-    (pcase choice
-      (?b (arrow-show))
-      (?p (arrow-project-show))
-      (?g (arrow-global-show))
-      (?o (arrow-org-list-project-notes)))))
+  (let* ((root       (ignore-errors (arrow-project--root)))
+         (proj-alist (and root (arrow-project--load root)))
+         (glob-alist (arrow-global--load))
+         (sections
+          (delq nil
+                (list
+                 (when arrow-alist
+                   (list :title     "Buffer"
+                         :alist     arrow-alist
+                         :format-fn #'arrow--format-bookmark-entry
+                         :jump-fn   #'arrow--jump-to-buffer-entry))
+                 (when proj-alist
+                   (list :title     "Project"
+                         :alist     proj-alist
+                         :format-fn #'arrow-project--format-entry
+                         :jump-fn   (lambda (key path mods)
+                                      (arrow-project--jump-to-entry
+                                       root proj-alist key path mods))))
+                 (when glob-alist
+                   (list :title     "Global"
+                         :alist     glob-alist
+                         :format-fn #'arrow-global--format-entry
+                         :jump-fn   (lambda (_key path mods)
+                                      (arrow-global--jump-to-entry path mods))))))))
+    (unless sections (user-error "No bookmarks in any layer"))
+    (when-let* ((result (arrow--show-multi-popup sections)))
+      (let* ((section   (plist-get result :section))
+             (selection (plist-get result :selection))
+             (mods      (plist-get result :mods))
+             (jump-fn   (plist-get section :jump-fn)))
+        (funcall jump-fn (car selection) (cdr selection) mods)))))
 
 ;;; display and jump logic
 
@@ -374,6 +394,19 @@ When it is N > 0 then N lines before and N lines after."
                    (parts   (append (list header) before (list bm-line) after (list ""))))
               (string-join parts "\n"))))))))
 
+(defun arrow--jump-to-buffer-entry (key marker mods)
+  "Generic jump to buffer bookmark KEY/MARKER, honoring split MODS.
+Promotes KEY when `arrow-auto-promote' is set.  Mirrors the existing
+behaviour of `arrow-show'"
+  (when arrow-auto-promote
+    (arrow--promote key))
+  (when (marker-buffer marker)
+    (cond
+     ((memq 'control mods) (select-window (split-window-below)))
+     ((memq 'shift   mods) (select-window (split-window-right))))
+    (switch-to-buffer (marker-buffer marker))
+    (goto-char marker)))
+
 (defun arrow-show ()
   "Display buffer-local bookmarks in a popup and jump with keypress.
 Window splits with C-key (horizontal), S-key / uppercase (vertical).
@@ -382,21 +415,9 @@ Context lines per entry controlled by `arrow-preview-context'."
   (when-let* ((result
                (arrow--show-popup
                 "Buffer" arrow-alist #'arrow--format-bookmark-entry)))
-    (let* ((selection   (car result))
-           (mods        (cdr result))
-           (key         (car selection))
-           (jump-marker (cdr selection)))
-
-      (when arrow-auto-promote
-        (arrow--promote key))
-
-      (when (marker-buffer jump-marker)
-        (cond
-         ((memq 'control mods) (select-window (split-window-below)))
-         ((memq 'shift   mods) (select-window (split-window-right))))
-
-        (switch-to-buffer (marker-buffer jump-marker))
-        (goto-char jump-marker)))))
+    (let* ((selection (car result))
+           (mods      (cdr result)))
+      (arrow--jump-to-buffer-entry (car selection) (cdr selection) mods))))
 
 ;;; buffer-local cycling
 

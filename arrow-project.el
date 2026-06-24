@@ -132,6 +132,29 @@ RET to confirm a 1-char key, or a second letter/digit for a 2-char key."
                                (cons entry (assoc-delete-all key alist))))
         (find-file (expand-file-name path root))))))
 
+(defun arrow-project--format-entry (key path)
+  "Format project bookmark KEY/PATH for popup display."
+  (format " [%s] %s" (propertize key 'face 'arrow-key-face) path))
+
+(defun arrow-project--jump-to-entry (root alist key path mods)
+  "Open project bookmark KEY/PATH under ROOT, honoring split MODS.
+ALIST is the projects current bookmark alist, used to re-save when
+`arrow-auto-promote' is enabled."
+  (let ((full-path (expand-file-name path root)))
+    (when arrow-auto-promote
+      (arrow-project--save root
+                           (cons (assoc key alist)
+                                 (assoc-delete-all key alist))))
+    (cond
+     ((memq 'control mods)   ; horizontal split
+      (select-window (split-window-below))
+      (find-file full-path))
+     ((memq 'shift mods)     ; vertical split
+      (select-window (split-window-right))
+      (find-file full-path))
+     (t                      ; normal open
+      (find-file full-path)))))
+
 ;;;###autoload
 (defun arrow-project-show ()
   "Show project bookmarks.  Window splits C-key (horizontal), S-key (vertical)."
@@ -143,29 +166,10 @@ RET to confirm a 1-char key, or a second letter/digit for a 2-char key."
                  (arrow--show-popup
                   (format "Project (%s)" proj-name)
                   alist
-                  (lambda (key path)
-                    (format " [%s] %s"
-                            (propertize key 'face 'arrow-key-face)
-                            path)))))
+                  #'arrow-project--format-entry)))
       (let* ((selection (car result))
-             (mods      (cdr result))
-             (key       (car selection))
-             (path      (cdr selection))
-             (full-path (expand-file-name path root)))
-
-        (when arrow-auto-promote
-          (arrow-project--save root
-                               (cons (assoc key alist)
-                                     (assoc-delete-all key alist))))
-        (cond
-         ((memq 'control mods)   ; horizontal split
-          (select-window (split-window-below))
-          (find-file full-path))
-         ((memq 'shift mods)     ; vertical split
-          (select-window (split-window-right))
-          (find-file full-path))
-         (t                      ; normal open
-          (find-file full-path)))))))
+             (mods      (cdr result)))
+        (arrow-project--jump-to-entry root alist (car selection) (cdr selection) mods)))))
 
 ;;;###autoload
 (defun arrow-project-reorder ()
@@ -174,14 +178,12 @@ Select the bookmark to move, then select which bookmark to insert it before
 \(same key = move to end)."
   (interactive)
   (let* ((root  (arrow-project--root))
-         (alist (arrow-project--load root))
-         (fmt   (lambda (key path)
-                  (format " [%s] %s"
-                          (propertize key 'face 'arrow-key-face)
-                          path))))
+         (alist (arrow-project--load root)))
     (unless alist (user-error "No project bookmarks to reorder"))
-    (when-let* ((source-key (arrow--show-reorder-popup "Project: Reorder" alist fmt nil))
-                (target-key (arrow--show-reorder-popup "Project: Reorder" alist fmt source-key)))
+    (when-let* ((source-key (arrow--show-reorder-popup "Project: Reorder" alist
+                                                        #'arrow-project--format-entry nil))
+                (target-key (arrow--show-reorder-popup "Project: Reorder" alist
+                                                        #'arrow-project--format-entry source-key)))
       (arrow-project--save root (arrow--reorder-alist alist source-key target-key))
       (message "Moved project bookmark [%s]." source-key))))
 

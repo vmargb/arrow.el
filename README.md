@@ -174,11 +174,14 @@ to quickly jump to a project and file without typing:
 
 
 ## Unified workflow (simpler)
-If the above commands are too overwhelming `arrow-jump` has you covered.
+If the above commands are too overwhelming `arrow-show-all` has you covered.
+It shows Buffer, Project, and Global bookmarks together in one popup
+press `TAB` / `S-TAB` to cycle between them, then jump exactly as you
+would from that layer's own popup.
 
-| Command      | Description                     |
-| ------------ | ------------------------------- |
-| `arrow-jump` | Unified command for every layer |
+| Command          | Description                                |
+| ----------------- | ------------------------------------------ |
+| `arrow-show-all` | Unified popup for every layer (TAB cycles) |
 
 
 
@@ -246,9 +249,5 @@ These are my keybindings, feel free to copy them.
 "oF" '(arrow-org-open-function      :which-key "org function for file")
 "op" '(arrow-org-open-project       :which-key "org for project")
 ;; Unified
-";" '(arrow-jump :which-key "arrow global")
+";" '(arrow-show-all :which-key "arrow global")
 ```
-
-## Todo
-
-- Unified hydra-like menu that shows buffer-local, project & global bookmarks together

@@ -117,6 +117,31 @@ confirm a single-character key, or press a second letter/digit to create a
                       key (abbreviate-file-name path)))
         (find-file path)))))
 
+(defun arrow-global--format-entry (key path)
+  "Format global bookmark KEY/PATH for popup display."
+  (let* ((exists (file-exists-p path))
+         (label  (abbreviate-file-name path))
+         ;; truncate to fit the 75-char popup frame
+         (label  (truncate-string-to-width label 60 0 nil "…"))
+         (label  (if exists label
+                   (propertize label 'face 'shadow))))
+    (format " [%s] %s" (propertize key 'face 'arrow-key-face) label)))
+
+(defun arrow-global--jump-to-entry (path mods)
+  "Open global bookmark at PATH, honoring split MODS."
+  (unless (file-exists-p path)
+    (user-error "Global bookmark points to missing file: %s"
+                (abbreviate-file-name path)))
+  (cond
+   ((memq 'control mods)
+    (select-window (split-window-below))
+    (find-file path))
+   ((memq 'shift mods)
+    (select-window (split-window-right))
+    (find-file path))
+   (t
+    (find-file path))))
+
 ;;;###autoload
 (defun arrow-global-show ()
   "Show global bookmarks popup and jump via keypress.
@@ -124,34 +149,10 @@ Window splits: C-key (horizontal split), S-key / uppercase (vertical split)."
   (interactive)
   (let ((alist (arrow-global--load)))
     (when-let* ((result
-                 (arrow--show-popup
-                  "Global"
-                  alist
-                  (lambda (key path)
-                    (let* ((exists (file-exists-p path))
-                           (label  (abbreviate-file-name path))
-                           ;; truncate to fit the 75-char popup frame
-                           (label  (truncate-string-to-width label 60 0 nil "…"))
-                           (label  (if exists label
-                                     (propertize label 'face 'shadow))))
-                      (format " [%s] %s"
-                              (propertize key 'face 'arrow-key-face)
-                              label))))))
+                 (arrow--show-popup "Global" alist #'arrow-global--format-entry)))
       (let* ((selection (car result))
-             (mods      (cdr result))
-             (path      (cdr selection)))
-        (unless (file-exists-p path)
-          (user-error "Global bookmark points to missing file: %s"
-                      (abbreviate-file-name path)))
-        (cond
-         ((memq 'control mods)
-          (select-window (split-window-below))
-          (find-file path))
-         ((memq 'shift mods)
-          (select-window (split-window-right))
-          (find-file path))
-         (t
-          (find-file path)))))))
+             (mods      (cdr result)))
+        (arrow-global--jump-to-entry (cdr selection) mods)))))
 
 ;;;###autoload
 (defun arrow-global-reorder ()
