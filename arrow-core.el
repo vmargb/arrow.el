@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
-;; Version: 1.1.0
+;; Version: 1.1.1
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -112,11 +112,12 @@ Automatically migrates legacy character keys to strings."
   (or (eq event ?\r) (eq event 'return)
       (eq basic ?\r) (eq basic 'return)))
 
-(defun arrow--prompt-for-key (input prefix)
-  "Return the prompt string for INPUT and PREFIX."
-  (if (string-empty-p input)
-      prefix
-    (format "%s [%s…]: " prefix input)))
+(defun arrow--prompt-for-key (input legend)
+  "Build the `read-key' echo-area prompt from LEGEND and the typed INPUT so far."
+  (concat legend "  "
+          (if (string-empty-p input)
+              "Select: "
+            (format "Select [%s…]: " input))))
 
 (defun arrow--matching-prefixes (input alist)
   "Return entries in ALIST whose key begins with INPUT."
@@ -327,8 +328,7 @@ Returns a plist (:width-chars W :lines L :left LEFT :top TOP)."
 (defun arrow--resize-child-frame (buf)
   "Resize and re-center the popup child frame to fit BUF's content.
 Used when a popup is re-rendered with different content after it was
-first shown, like switching sections in `arrow--show-multi-popup', or
-narrowing by prefix."
+first shown like switching sections or narrowing by prefix."
   (when (frame-live-p arrow--popup-frame)
     (let* ((parent (or (frame-parent arrow--popup-frame) (selected-frame)))
            (geo    (arrow--popup-frame-geometry buf parent)))
@@ -346,19 +346,19 @@ narrowing by prefix."
                                 (window-height . fit-window-to-buffer)))))
   (redisplay t))
 
-(defun arrow--popup-header-line (title legend)
-  "Build the header line for TITLE and LEGEND."
-  (concat
-   (propertize (format " %s " title) 'face 'bold)
-   (propertize legend 'face 'arrow-legend-face)))
+(defun arrow--popup-header-line (title)
+  "Build the header line for TITLE."
+  (if (text-property-not-all 0 (length title) 'face nil title)
+      (format " %s " title)
+    (propertize (format " %s " title) 'face 'bold)))
 
-(defun arrow--popup-render (buf title legend lines)
+(defun arrow--popup-render (buf title lines)
   "Render TITLE and LINES into BUF and refresh the popup viewport.
-Also re-renders the displayed popup frame to fit the new content"
+Also re-renders the already-displayed popup frame to fit the new content"
   (with-current-buffer buf
     (erase-buffer)
     (setq header-line-format
-          (arrow--popup-header-line title legend))
+          (arrow--popup-header-line title))
     (setq mode-line-format               nil
           cursor-type                    nil
           cursor-in-non-selected-windows nil
@@ -385,6 +385,7 @@ After the first keystroke the popup is filtered to show only entries
 that start with the typed character (or instant jump on match)"
   (unless alist (user-error "No bookmarks to display"))
   (let ((buf    (get-buffer-create " *arrow-popup*"))
+        (legend " [Key] Jump | [C-Key] Split─ | [S-Key] Split│ | [q] Quit")
         (result nil))
 
     ;; re-fill the BUF with CURRENT-ALIST and refreshes the popup display
@@ -393,7 +394,6 @@ that start with the typed character (or instant jump on match)"
            (arrow--popup-render
             buf
             title
-            " [Key] Jump | [C-Key] Split─ | [S-Key] Split│ | [q] Quit"
             (mapcar (lambda (bm)
                       (funcall format-fn (car bm) (cdr bm)))
                     current-alist))))
@@ -408,7 +408,7 @@ that start with the typed character (or instant jump on match)"
                 (first-mods   nil)
                 (done         nil))
             (while (not done)
-              (let* ((prompt     (arrow--prompt-for-key input-string "Select: "))
+              (let* ((prompt     (arrow--prompt-for-key input-string legend))
                      (event      (read-key prompt))
                      (raw-key    (event-basic-type event))
                      (mods       (event-modifiers event))
@@ -485,10 +485,10 @@ that start with the typed character (or instant jump on match)"
 ;; returns a plist (:section SECTION :selection (KEY . VALUE) :mods MODS)
 (defun arrow--show-multi-popup (sections)
   "Tab-cycling popup over SECTIONS.
-Each element of SECTIONS is a plist with :title, :alist, and :format-fn,
-switching to a section scopes to the active sections alist."
+Each element of SECTIONS is a plist with :title, :alist, and :format-fn"
   (unless sections (user-error "No bookmarks to display"))
   (let* ((buf    (get-buffer-create " *arrow-popup*"))
+         (legend " [Key] Jump | [Tab] Section | [C/S-Key] Split | [q] Quit")
          (n      (length sections))
          (idx    0)
          (result nil))
@@ -499,7 +499,6 @@ switching to a section scopes to the active sections alist."
            (arrow--popup-render
             buf
             (arrow--multi-popup-tab-strip sections idx)
-            " [Key] Jump | [Tab] Section | [C/S-Key] Split | [q] Quit"
             (mapcar (lambda (bm)
                       (funcall (plist-get (current-section) :format-fn)
                                (car bm) (cdr bm)))
@@ -514,7 +513,7 @@ switching to a section scopes to the active sections alist."
                 (done         nil))
             (while (not done)
               (let* ((alist      (plist-get (current-section) :alist))
-                     (prompt     (arrow--prompt-for-key input-string "Select: "))
+                     (prompt     (arrow--prompt-for-key input-string legend))
                      (event      (read-key prompt))
                      (raw-key    (event-basic-type event))
                      (mods       (event-modifiers event))
@@ -614,15 +613,15 @@ If SOURCE-KEY equals TARGET-KEY, SOURCE-KEY is moved to the end of the list."
 TITLE and FORMAT-FN work the same as in `arrow--show-popup'.
 SELECTED-KEY is the bookmark being moved (nil in step 1)."
   (unless alist (user-error "No bookmarks to reorder"))
-  (let ((buf (get-buffer-create " *arrow-popup*")))
+  (let ((buf    (get-buffer-create " *arrow-popup*"))
+        (legend (if selected-key
+                    (format " Moving [%s]: insert BEFORE which? (same key = end) | [q] Cancel"
+                            selected-key)
+                  " [Key] Select bookmark to MOVE | [q] Quit")))
 
     (arrow--popup-render
      buf
      title
-     (if selected-key
-         (format " Moving [%s]: insert BEFORE which? (same key = end) | [q] Cancel"
-                 selected-key)
-       " [Key] Select bookmark to MOVE | [q] Quit")
      (mapcar (lambda (bm)
                (let* ((is-sel (and selected-key
                                    (equal (car bm) selected-key)))
@@ -639,7 +638,7 @@ SELECTED-KEY is the bookmark being moved (nil in step 1)."
               (done         nil)
               (result       nil))
           (while (not done)
-            (let* ((prompt  (arrow--prompt-for-key input-string "Select: "))
+            (let* ((prompt  (arrow--prompt-for-key input-string legend))
                    (event   (read-key prompt))
                    (raw-key (event-basic-type event)))
               (cond

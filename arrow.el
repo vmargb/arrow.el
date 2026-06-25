@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
-;; Version: 1.1.0
+;; Version: 1.1.1
 ;; Package-Requires: ((emacs "28.1"))
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
@@ -304,6 +304,7 @@ Sections with no bookmarks (e.g. project when not inside a project) are omitted.
   (let* ((root       (ignore-errors (arrow-project--root)))
          (proj-alist (and root (arrow-project--load root)))
          (glob-alist (arrow-global--load))
+         (org-alist  (and root (arrow-org--notes-alist root)))
          (sections
           (delq nil
                 (list
@@ -324,7 +325,13 @@ Sections with no bookmarks (e.g. project when not inside a project) are omitted.
                          :alist     glob-alist
                          :format-fn #'arrow-global--format-entry
                          :jump-fn   (lambda (_key path mods)
-                                      (arrow-global--jump-to-entry path mods))))))))
+                                      (arrow-global--jump-to-entry path mods))))
+                 (when org-alist
+                   (list :title     "Org"
+                         :alist     org-alist
+                         :format-fn #'arrow-org--format-entry
+                         :jump-fn   (lambda (_key path mods)
+                                      (arrow-org--jump-to-entry path mods))))))))
     (unless sections (user-error "No bookmarks in any layer"))
     (when-let* ((result (arrow--show-multi-popup sections)))
       (let* ((section   (plist-get result :section))

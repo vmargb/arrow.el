@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2026 vmargb
 ;; Author: vmargb
-;; Version: 1.1.0
+;; Version: 1.1.1
 ;; URL: https://github.com/vmargb/arrow.el
 ;; Keywords: convenience, navigation, bookmarks
 ;; SPDX-License-Identifier: GPL-3.0-or-later
@@ -15,6 +15,8 @@
 ;;; Code:
 
 (require 'project)
+(require 'subr-x)
+(require 'cl-lib)
 
 (declare-function org-set-property "org" (property value))
 (declare-function org-entry-get "org" (pom property &optional inherit literal-nil))
@@ -117,6 +119,53 @@ deletes the note window and `other-frame' deletes the note frame"
      (when return-pos
        (goto-char (string-to-number return-pos))))))
 
+;;; show-all integration
+
+(defconst arrow-org--key-pool "abcdefghijklmnopqrstuvwxyz0123456789"
+  "Characters auto-assigned as throwaway keys to discovered notes.
+so these are transient hint-keys (like `avy'), unlike buffer,project,global")
+
+(defun arrow-org--collect-notes (root)
+  "Return a list of all org note files for the project at ROOT."
+  (let* ((project-name (file-name-nondirectory (directory-file-name root)))
+         (project-note (expand-file-name
+                        (concat project-name ".org")
+                        arrow-org-directory))
+         (project-dir (expand-file-name project-name arrow-org-directory))
+         (file-notes (when (file-exists-p project-dir)
+                       (directory-files-recursively project-dir "\\.org$"))))
+    (append
+     (when (file-exists-p project-note) (list project-note))
+     file-notes)))
+
+(defun arrow-org--notes-alist (root)
+  "Build a transient (key . path) alist for ROOT's org notes.
+Keys come from `arrow-org--key-pool' in listed order and only exist
+for the lifetime of one popup invocation, nothing is persisted"
+  (cl-loop for file in (arrow-org--collect-notes root)
+           for key across arrow-org--key-pool
+           collect (cons (char-to-string key) file)))
+
+(defun arrow-org--format-entry (key path)
+  "Format org note KEY/PATH for popup display."
+  (let* ((rel   (file-relative-name path (expand-file-name arrow-org-directory)))
+         (label (if (string-suffix-p ".notes.org" rel)
+                    (concat (string-remove-suffix ".notes.org" rel) " (file note)")
+                  (concat (string-remove-suffix ".org" rel) " (project note)"))))
+    (format " [%s] %s" (propertize key 'face 'arrow-key-face) label)))
+
+(defun arrow-org--jump-to-entry (path mods)
+  "Open org note at PATH, honoring split MODS."
+  (cond
+   ((memq 'control mods)
+    (select-window (split-window-below))
+    (find-file path))
+   ((memq 'shift mods)
+    (select-window (split-window-right))
+    (find-file path))
+   (t
+    (find-file path))))
+
 ;;; commands
 
 ;;;###autoload
@@ -212,17 +261,8 @@ to it, otherwise a new heading is created at the end of the file."
 (defun arrow-org-list-project-notes ()
   "List all project notes with completion."
   (interactive)
-  (let* ((root (arrow-org--get-project-root))
-         (project-name (file-name-nondirectory (directory-file-name root)))
-         (project-note (expand-file-name
-                        (concat project-name ".org")
-                        arrow-org-directory))
-         (project-dir (expand-file-name project-name arrow-org-directory))
-         (file-notes (when (file-exists-p project-dir)
-                       (directory-files-recursively project-dir "\\.org$")))
-         (files (append
-                 (when (file-exists-p project-note) (list project-note))
-                 file-notes)))
+  (let* ((root  (arrow-org--get-project-root))
+         (files (arrow-org--collect-notes root)))
     (if files
         (find-file (completing-read "Project note: " files nil t))
       (message "No notes found for this project"))))
