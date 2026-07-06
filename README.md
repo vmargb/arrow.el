@@ -1,22 +1,38 @@
 # arrow.el
 
+# arrow.el
+
 <div align="center">
 
-  <h3>Global marks</h3>
-  <img src="screenshots/global.png" alt="Bookmark screenshot" width="600"/>
-  <p><em>Example global bookmarks to my config files</em></p>
+  <h3>Demo</h3>
+  <img src="screenshots/demo.gif" alt="arrow demo" width="600"/>
+  <p><em>arrow-show-all demo</em></p>
 
   <br>
-
-  <h3>Project-local marks</h3>
-  <img src="screenshots/project.png" alt="Project screenshot" width="600"/>
-  <p><em>Example inside of a local project</em></p>
-
+  <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
   <br>
 
-  <h3>Buffer-local marks</h3>
-  <img src="screenshots/buffer.png" alt="Bookmark screenshot" width="600"/>
-  <p><em>Example using my <code>init.el</code></em></p>
+  <div style="display: flex; justify-content: center; gap: 15px; align-items: flex-start;">
+    
+    <div style="flex: 1; max-width: 30%;">
+      <h4>Global marks</h4>
+      <img src="screenshots/global.png" alt="Bookmark screenshot" style="width: 100%; height: auto;"/>
+      <p><em>Example global bookmarks to my config files</em></p>
+    </div>
+
+    <div style="flex: 1; max-width: 30%;">
+      <h4>Project-local marks</h4>
+      <img src="screenshots/project.png" alt="Project screenshot" style="width: 100%; height: auto;"/>
+      <p><em>Example inside of a local project</em></p>
+    </div>
+
+    <div style="flex: 1; max-width: 30%;">
+      <h4>Buffer-local marks</h4>
+      <img src="screenshots/buffer.png" alt="Bookmark screenshot" style="width: 100%; height: auto;"/>
+      <p><em>Example using my <code>init.el</code></em></p>
+    </div>
+
+  </div>
 
 </div>
 
@@ -108,7 +124,7 @@ Ensure you have `(elpaca-use-package-mode)`
 (setq arrow-org-window-behavior 'same-window) ;; 'same-window, 'other-window, 'other-frame
 ```
 
-### Org integration
+### Org-mode integration
 The Org layer extends Arrow further by dynamically linking your project to private documentation (outside of the repo). Each project has a bookmark to its own Org file, allowing every source file in the project to connect back to it. Additionally, every file in the project also has its own distinct org file.
 
 This is not an alternative to `org-capture`: the typical org-capture flow doesn't provide a natural forward & back-linking reading experience for reconnecting with complex codebases (especially after months away). Arrow makes documentation first-class and directly reachable from code, instead of scattering quick snippets into a global capture inbox that may never be revisited.
