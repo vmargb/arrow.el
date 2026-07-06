@@ -1,7 +1,5 @@
 # arrow.el
 
-# arrow.el
-
 <div align="center">
 
   <h3>Demo</h3>
@@ -9,33 +7,28 @@
   <p><em>arrow-show-all demo</em></p>
 
   <br>
-  <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-  <br>
 
-  <div style="display: flex; justify-content: center; gap: 15px; align-items: flex-start;">
-    
-    <div style="flex: 1; max-width: 30%;">
-      <h4>Global marks</h4>
-      <img src="screenshots/global.png" alt="Bookmark screenshot" style="width: 100%; height: auto;"/>
-      <p><em>Example global bookmarks to my config files</em></p>
-    </div>
-
-    <div style="flex: 1; max-width: 30%;">
-      <h4>Project-local marks</h4>
-      <img src="screenshots/project.png" alt="Project screenshot" style="width: 100%; height: auto;"/>
-      <p><em>Example inside of a local project</em></p>
-    </div>
-
-    <div style="flex: 1; max-width: 30%;">
-      <h4>Buffer-local marks</h4>
-      <img src="screenshots/buffer.png" alt="Bookmark screenshot" style="width: 100%; height: auto;"/>
-      <p><em>Example using my <code>init.el</code></em></p>
-    </div>
-
-  </div>
+  <table border="0">
+    <tr>
+      <td align="center" valign="top" width="33%">
+        <h4>Global marks</h4>
+        <img src="screenshots/global.png" alt="Bookmark screenshot" width="100%"/>
+        <p><em>Global bookmarks to my config files</em></p>
+      </td>
+      <td align="center" valign="top" width="33%">
+        <h4>Project-local marks</h4>
+        <img src="screenshots/project.png" alt="Project screenshot" width="100%"/>
+        <p><em>Bookmarks for a local project</em></p>
+      </td>
+      <td align="center" valign="top" width="33%">
+        <h4>Buffer-local marks</h4>
+        <img src="screenshots/buffer.png" alt="Bookmark screenshot" width="100%"/>
+        <p><em>Example using my <code>init.el</code></em></p>
+      </td>
+    </tr>
+  </table>
 
 </div>
-
 
 ---
 
