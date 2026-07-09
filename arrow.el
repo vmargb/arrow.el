@@ -109,7 +109,22 @@ Set to 0 (default) for the classic single-line preview."
 
 (defface arrow-bookmark-face
   '((t (:inherit font-lock-keyword-face :weight bold)))
-  "Face used for bookmark indicators."
+  "Face used for the margin glyph."
+  :group 'arrow)
+
+(defface arrow-bookmark-key-face
+  '((t (:inherit line-number
+        :height 0.85
+        :slant normal
+        :weight normal)))
+  "Face used for the end-of-line key label.
+Inherits from `line-number' since line numbers are a distinct hue from
+comments in most themes, which is what actually separates it visually."
+  :group 'arrow)
+
+(defcustom arrow-visual-marker-glyph "▶"
+  "Fixed-width glyph shown in the margin to flag a bookmarked line."
+  :type 'string
   :group 'arrow)
 
 (defvar-local arrow--overlays nil
@@ -122,19 +137,30 @@ Set to 0 (default) for the classic single-line preview."
     (save-excursion
       (goto-char marker)
       (let* ((pos         (line-beginning-position))
-             (ov          (make-overlay pos pos))
+             (eol         (line-end-position))
              (margin-side (if (eq arrow-visual-marker-position 'right)
                               'right-margin
-                            'left-margin)))
-        (overlay-put ov 'before-string
+                            'left-margin))
+             (glyph-ov    (make-overlay pos pos))
+             (key-ov      (make-overlay eol eol)))
+        ;; fixed margin glyph just flags "bookmark is here"
+        ;; so width never has to change no matter how long KEY is
+        (overlay-put glyph-ov 'before-string
                      (propertize
                       " "
                       'display
                       `((margin ,margin-side)
-                        ,(propertize
-                          (format "%s " key)
-                          'face 'arrow-bookmark-face))))
-        (push ov arrow--overlays)))))
+                        ,(propertize arrow-visual-marker-glyph
+                                     'face 'arrow-bookmark-face
+                                     'help-echo (format "arrow: %s" key)))))
+        ;; full key label at end-of-line, scales to any key length, costs no margin space
+        (overlay-put key-ov 'after-string
+                     (concat (propertize " " 'face 'default)
+                             (propertize (format "[%s]" key)
+                                         'face 'arrow-bookmark-key-face
+                                         'display '(raise 0.15))))
+        (push glyph-ov arrow--overlays)
+        (push key-ov arrow--overlays)))))
 
 (defun arrow--clear-indicators ()
   "Remove all bookmark indicators."

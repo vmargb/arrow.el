@@ -4,7 +4,7 @@
 
   <h3>Demo</h3>
   <img src="screenshots/demo.gif" alt="arrow demo" width="600"/>
-  <p><em>arrow-show-all demo</em></p>
+  <p><em><code>arrow-show-all</code> demo</em></p>
 
   <br>
 
