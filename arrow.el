@@ -113,13 +113,11 @@ Set to 0 (default) for the classic single-line preview."
   :group 'arrow)
 
 (defface arrow-bookmark-key-face
-  '((t (:inherit line-number
+  '((t (:inherit shadow
         :height 0.85
-        :slant normal
-        :weight normal)))
-  "Face used for the end-of-line key label.
-Inherits from `line-number' since line numbers are a distinct hue from
-comments in most themes, which is what actually separates it visually."
+        :slant italic
+        :weight light)))
+  "Face used for the end-of-line key label."
   :group 'arrow)
 
 (defcustom arrow-visual-marker-glyph "▶"
@@ -142,9 +140,9 @@ comments in most themes, which is what actually separates it visually."
                               'right-margin
                             'left-margin))
              (glyph-ov    (make-overlay pos pos))
-             (key-ov      (make-overlay eol eol)))
-        ;; fixed margin glyph just flags "bookmark is here"
-        ;; so width never has to change no matter how long KEY is
+             (key-ov      (make-overlay eol eol nil t t)))
+        ;; fixed-width margin glyph just flags "bookmark is here"
+        ;; width never has to change anymore, no matter how long KEY is
         (overlay-put glyph-ov 'before-string
                      (propertize
                       " "
@@ -155,10 +153,10 @@ comments in most themes, which is what actually separates it visually."
                                      'help-echo (format "arrow: %s" key)))))
         ;; full key label at end-of-line, scales to any key length, costs no margin space
         (overlay-put key-ov 'after-string
-                     (concat (propertize " " 'face 'default)
-                             (propertize (format "[%s]" key)
+                     (concat (propertize " " 'face 'default 'cursor 1)
+                             (propertize (format "%s" key)
                                          'face 'arrow-bookmark-key-face
-                                         'display '(raise 0.15))))
+                                         'display '(raise 0.20))))
         (push glyph-ov arrow--overlays)
         (push key-ov arrow--overlays)))))
 
