@@ -42,6 +42,13 @@
 (defvar arrow--popup-frame nil)
 (defvar arrow--popup-window nil)
 
+(defcustom arrow-popup-background-face 'tooltip
+  "Most themes style the built-in `tooltip' to match their palette.
+Some others leave it untouched, which makes the popup look wrong
+point it at a different face, such as `mode-line-inactive' or `default'."
+  :type 'face
+  :group 'arrow-core)
+
 (defface arrow-key-face
   '((t (:inherit font-lock-keyword-face :weight bold)))
   "Face for highlighting bookmark keys in the popup."
@@ -311,7 +318,7 @@ Returns a plist (:width-chars W :lines L :left LEFT :top TOP)."
                       (tab-bar-lines         . 0) ;; suppress tab-bar
                       (tool-bar-lines        . 0) ;; suppress tool-bar
                       (menu-bar-lines        . 0) ;; suppress menu-bar
-                      (background-color      . ,(face-background 'tooltip nil t))
+                      (background-color      . ,(face-background arrow-popup-background-face nil t))
                       ;; geometry per group for different set of marks
                       (width                 . ,(plist-get geo :width-chars))
                       (height                . ,(plist-get geo :lines))

@@ -113,6 +113,10 @@ Ensure you have `(elpaca-use-package-mode)`
 (setq arrow-visual-marker-position 'left) ;; marker position(left or right)
 (setq arrow-project-modeline nil) ;; show modeline indicator for arrow-project
 
+;; some colorschemes can messup the way arrow looks since they dont style `tooltip`
+;; if this happens then try 'mode-line-inactive or 'default instead
+(setq arrow-popup-background-face 'tooltip)
+
 ;; Org layer settings
 (setq arrow-org-window-behavior 'same-window) ;; 'same-window, 'other-window, 'other-frame
 ```
