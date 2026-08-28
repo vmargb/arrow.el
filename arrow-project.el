@@ -31,7 +31,7 @@
 
 (defun arrow-project--root ()
   "Return project root if found."
-  (if-let ((proj (project-current)))
+  (if-let* ((proj (project-current)))
       (project-root proj)
     (user-error "Not currently in a project (via project.el)")))
 
@@ -40,7 +40,7 @@
 Returns nil when the buffer is not inside a project."
   (when (eq arrow-project--cached-root 'unset)
     (setq arrow-project--cached-root
-          (when-let ((proj (project-current)))
+          (when-let* ((proj (project-current)))
             (project-root proj))))
   arrow-project--cached-root)
 

@@ -52,7 +52,7 @@
 
 (defun arrow-org--get-project-root ()
   "Get the current project root or error."
-  (if-let ((proj (project-current)))
+  (if-let* ((proj (project-current)))
       (project-root proj)
     (user-error "Not in a project")))
 
@@ -175,7 +175,7 @@ Always returns to the specific file you came from."
   (interactive)
   (if (arrow-org--is-note-buffer-p)
       ;; GOING BACK to file, get properties BEFORE leaving org buffer
-      (if-let ((source (org-entry-get (point-min) "ARROW_SOURCE" t)))
+      (if-let* ((source (org-entry-get (point-min) "ARROW_SOURCE" t)))
           (arrow-org--return-to-source
            source (org-entry-get (point-min) "ARROW_POS" t))
         (message "No source link found."))
@@ -200,7 +200,7 @@ Maintains separate note files per source file."
   (interactive)
   (if (arrow-org--is-note-buffer-p)
       ;; GOING BACK
-      (if-let ((source (org-entry-get (point-min) "ARROW_SOURCE" t)))
+      (if-let* ((source (org-entry-get (point-min) "ARROW_SOURCE" t)))
           (arrow-org--return-to-source source)
         (message "No source link found."))
     ;; GOING TO NOTE

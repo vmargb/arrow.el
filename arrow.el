@@ -248,7 +248,7 @@ a 2-character key.  On the first prompt RET auto-assigns the next free key."
          (key     (or raw-key (arrow--find-free-key-in arrow-alist))))
     ;; conflict check, skip if we are simply overwriting the same key
     (unless (assoc key arrow-alist)
-      (when-let ((conflict (arrow--key-conflicts-p key arrow-alist)))
+      (when-let* ((conflict (arrow--key-conflicts-p key arrow-alist)))
         (user-error "Key conflict: [%s] is blocked by existing key [%s]"
                     key conflict)))
     (let ((marker (point-marker)))
@@ -279,7 +279,7 @@ a 2-character key.  On the first prompt RET auto-assigns the next free key."
   (interactive)
   (when (y-or-n-p "Clear all bookmarks for this file? ")
     (setq arrow-alist nil)
-    (when-let ((file (arrow--storage-file)))
+    (when-let* ((file (arrow--storage-file)))
       (when (file-exists-p file) (delete-file file)))
     (message "Cleared all bookmarks.")
     (when arrow-visual-marker

@@ -72,7 +72,7 @@ confirm a single-character key, or press a second letter/digit to create a
          (key       (or raw-key (arrow--find-free-key-in alist))))
     ;; conflict check, skip when overwriting the same key
     (unless (assoc key alist)
-      (when-let ((conflict (arrow--key-conflicts-p key alist)))
+      (when-let* ((conflict (arrow--key-conflicts-p key alist)))
         (user-error "Key conflict: [%s] is blocked by existing key [%s]"
                     key conflict)))
     (let ((new-alist (cons (cons key file-path)
